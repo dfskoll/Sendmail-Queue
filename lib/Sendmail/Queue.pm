@@ -1,100 +1,153 @@
 package Sendmail::Queue;
-
-use warnings;
 use strict;
+use warnings;
+use Carp;
+
+our $VERSION = 0.01;
 
 =head1 NAME
 
-Sendmail::Queue - The great new Sendmail::Queue!
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
+Sendmail::Queue - Manipulate Sendmail queues directly
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
-
     use Sendmail::Queue;
 
-    my $foo = Sendmail::Queue->new();
-    ...
+    # Create a new queue object.  Throws exception on error.
+    my $q = Sendmail::Queue->new({
+        QueueDirectory => '/var/spool/mqueue'
+    });
 
-=head1 EXPORT
+    # Create a new qf file object
+    my $qf = Sendmail::Queue::Qf->new();
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+    # Generate a Sendmail 8.12-compatible queue ID
+    $qf->generate_queue_id();
 
-=head1 FUNCTIONS
+    my $df = Sendmail::Queue::Df->new();
 
-=head2 function1
+    # Need to give it the same queue ID as your $qf
+    $df->set_queue_id( $qf->get_queue_id );
+    $df->set_data( $some_body );
 
-=cut
+    # Or....
+    $df->set_data_from( $some_fh );
 
-sub function1 {
-}
+    # Or, if you already have a file...
+    my $second_df = Sendmail::Queue::Df->new();
+    $second_df->set_queue_id( $qf->get_queue_id );
+    $second_df->hardlink_to( $df ); # Need better name
 
-=head2 function2
+    $qf->set_defaults();
+    $qf->set_sender('me@example.com');
+    $qf->add_recipient('you@example.org');
 
-=cut
+    $q->enqueue( $qf, $df );
 
-sub function2 {
-}
+=head1 DESCRIPTION
 
-=head1 AUTHOR
+Sendmail::Queue provides a mechanism for directly manipulating Sendmail queue files.
 
-David F. Skoll, C<< <dfs at roaringpenguin.com> >>
+=head1 METHODS
 
-=head1 BUGS
 
-Please report any bugs or feature requests to
-C<bug-sendmail-queue at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Sendmail-Queue>.
-I will be notified, and then you'll automatically be notified of progress on
-your bug as I make changes.
+=head2 new ( \%args )
 
-=head1 SUPPORT
+Create a new Sendmail::Queue object.
 
-You can find documentation for this module with the perldoc command.
-
-    perldoc Sendmail::Queue
-
-You can also look for information at:
+Required arguments are:
 
 =over 4
 
-=item * AnnoCPAN: Annotated CPAN documentation
+=item QueueDirectory
 
-L<http://annocpan.org/dist/Sendmail-Queue>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/Sendmail-Queue>
-
-=item * RT: CPAN's request tracker
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Sendmail-Queue>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/Sendmail-Queue>
+The queue directory to use.
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2007 David F. Skoll, all rights reserved.
-
-This program is released under the following license: restrictive
-
 =cut
 
-1; # End of Sendmail::Queue
+sub new
+{
+	my ($class, $args) = @_;
+
+	my $self = { %{$args} };
+
+	bless $self, $class;
+
+	if( ! -d $self->{QueueDirectory} ) {
+		die q{ Queue directory doesn't exist};
+	}
+
+	if( -d "$self->{QueueDirectory}/qf" ) {  # TODO:: Use File::Path
+		# We have separate /qf, /df, /xf, maybe
+		# TODO:
+		# 	- verify that all three exist
+		# 	- update _qf_directory and _df_directory
+		# 	appropriately
+	} else {
+		$self->{_qf_directory} = $self->{QueueDirectory};
+		$self->{_df_directory} = $self->{QueueDirectory};
+	}
+
+	return $self;
+}
+
+# Returns success, or dies.
+sub enqueue
+{
+	my ($self, $qf, $df) = @_;
+
+	eval {
+		$df->write( $self->{_df_directory} );
+		$qf->write( $self->{_qf_directory} );
+	};
+	if( $@ ) { ## no critic
+		$df->delete();
+		$qf->delete();
+
+		# Rethrow the exception after cleanup
+		die $@;
+	}
+
+	return 1;
+}
+
+sub sync
+{
+	# TODO: open the _df_directory/_qf_directory explicitly and
+	# fsync it so that the directory entries are synced.
+	# We do this because file writes can be sync'ed when closed,
+	# but any hardlinks won't be unless we sync the dir
+}
+
+1;
+__END__
+
+
+=head1 DEPENDENCIES
+
+=head2 Core Perl Modules
+
+L<Carp>
+
+=head2 Other Modules
+
+=head1 INCOMPATIBILITIES
+
+There are no known incompatibilities with this module.
+
+=head1 BUGS AND LIMITATIONS
+
+There are no known bugs in this module.
+Please report problems to the author.
+Patches are welcome.
+
+=head1 AUTHOR
+
+David F. Skoll, C<< <support at roaringpenguin.com> >>
+Dave O'Neill, C<< <support at roaringpenguin.com> >>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007 Roaring Penguin Software, Inc.  All rights reserved.
