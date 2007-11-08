@@ -1,8 +1,9 @@
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use Test::Exception;
 use File::Temp;
+use File::Slurp;
 
 BEGIN { 
 	use_ok('Sendmail::Queue::Qf'); 
@@ -68,4 +69,42 @@ BEGIN {
 	is( $warn_count, 3, 'Got 3 warnings about duplicate filename');
 	is( $qid, $qf->get_queue_id(), 'generate_queue_id() properly saved our queue id');
 	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
+}
+
+
+# write()
+{
+	my $qf = Sendmail::Queue::Qf->new();
+
+	# Override so that our test will work
+	no warnings 'redefine';
+	local *Sendmail::Queue::Qf::_format_create_time = sub { 'T1234567890' };
+
+	$qf->set_sender('dmo@dmo.ca');
+
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+
+	$qf->set_queue_directory( $dir );
+	$qf->set_headers("From: foobar\nTo: someone\nDate: Wed, 07 Nov 2007 14:54:33 -0500\n");
+
+	$qf->write();
+
+	my $expected = <<'END';
+V8
+T1234567890
+K0
+N0
+P30000
+Fs
+$_localhost.localdomain [127.0.0.1]
+${daemon_flags}
+S<dmo@dmo.ca>
+H??From: foobar
+H??To: someone
+H??Date: Wed, 07 Nov 2007 14:54:33 -0500
+.
+END
+
+	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+
 }
