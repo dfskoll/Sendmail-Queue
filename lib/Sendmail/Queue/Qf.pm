@@ -55,6 +55,8 @@ sub new
 	my $self = {
 		queue_directory => undef,
 		queue_id => undef,
+		sender => undef,
+		recipients => [],
 	};
 
 	bless $self, $class;
@@ -150,6 +152,13 @@ sub get_queue_filename
 	return File::Spec->catfile( $self->get_queue_directory(), 'qf' . $self->get_queue_id() );
 }
 
+sub add_recipient
+{
+	my ($self, @recips) = @_;
+
+	push @{$self->{recipients}}, @recips;
+}
+
 =head2 write ( [ $path_to_queue ] )
 
 Writes a qfXXXXXXX file using the object's data.
@@ -195,7 +204,8 @@ sub write
 		die qq{Couldn't lock $filepath: $!};
 	}
 
-
+	# TODO: should print directly instead of creating a copy in
+	# $data
 	my $data = join("\n",
 		$self->_format_qf_version(),
 		$self->_format_create_time(),
@@ -207,13 +217,11 @@ sub write
 		$self->_format_flag_bits(),
 		$self->_format_macros(),
 		$self->_format_sender_address(),
-		# TODO: C line
-		# TODO: r line(s)
-		# TODO: R line(s)
+		$self->_format_recipient_addresses(),
 		$self->_format_headers(),
 	);
 
-	if( ! $fh->print( $data ) ) {
+	if( ! $fh->print( "$data\n" ) ) {
 		die qq{Couldn't print to $filepath: $!};
 	}
 
@@ -261,6 +269,7 @@ sub _format_flag_bits
 {
 	# TODO: $$11.11.7 in bat book.  Unknown if we need this, but
 	# all samples seem to have it
+	# 	- some also have the w and b flags.  Look into this.
 	'Fs'
 }
 
@@ -268,10 +277,18 @@ sub _format_macros
 {
 	# TODO: we're hardcoding these here, but they really should be
 	# generated as needed
+	# TODO: we may also want to pass on other macros obtained 
 	# These are cargo-culted from a test message, and should be
 	# researched to determine correct values
-	return '$_localhost.localdomain [127.0.0.1]
-${daemon_flags}'
+	# 	- $r may need to be SMTP or ESMTP
+	# 	- ${daemon_flags}EE <-- ???
+	# 	- ${daemon_flags}c u <-- ???
+	# 	- $_user@hostname <-- ???
+	return join("\n",
+		'$_localhost.localdomain [127.0.0.1]',
+		'$rESMTP',
+		'${daemon_flags}',
+	);
 }
 
 sub _format_sender_address
@@ -288,15 +305,51 @@ sub _format_headers
 {
 	my ($self) = @_;
 
-	my $out = '';
+	my @out;
 	foreach my $line ( split /\s*\n\s*/, $self->get_headers ) {
 		# TODO: proper wrapping of header lines
-		# TODO: delivery agent flags between ??
-		# TODO: proper escaping of header data (see Bat Book, ch 25)
-		$out .= 'H??' . $line . "\n";
+
+		# TODO: proper escaping of header data (see Bat Book,
+		# ch 25).  We need to be sure that we're not allowing
+		# anything that would allow an inbound header to
+		# trigger some Sendmail special-case.
+
+		# We do not want any delivery-agent flags between ??.
+		# Even Return-Path, which ordinarily has ?P?, we shall
+		# ignore flags for, as we want to pass on every header
+		# that we originally received.
+		push @out, "H??$line";
 	}
-	$out .= ".\n";
-	return $out;
+	push @out, '.';
+	return join("\n", @out);
+}
+
+sub _format_recipient_addresses
+{
+	my ($self) = @_;
+
+	my $recips = $self->get_recipients();
+	if( scalar @$recips < 1 ) {
+		return;
+	}
+
+	my @out;
+
+	foreach my $recip ( @{$recips} ) {
+		# TODO: Sanitize $recip before using ?
+
+		push @out, "C:<$recip>";
+		push @out, "rRFC822; $recip";
+		# TODO: flags after R and before : -- which do we need?
+		#   P - Primary address.  Addresses via SMTP or
+		#       commandline are always considered primary, so yes.
+		#   F,D - DSN Notify on failure or delay.  Do we want
+		#         DSNs sent for streamed mail?
+		# everything else, we can probably ignore
+		push @out, "RPFD:$recip";
+	}
+
+	return join("\n", @out);
 }
 
 

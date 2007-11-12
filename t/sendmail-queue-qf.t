@@ -33,7 +33,7 @@ BEGIN {
 # Generation of queue ID with directory provided
 {
 	my $qf = Sendmail::Queue::Qf->new();
-	
+
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
 	$qf->set_queue_directory( $dir );
@@ -81,6 +81,7 @@ BEGIN {
 	local *Sendmail::Queue::Qf::_format_create_time = sub { 'T1234567890' };
 
 	$qf->set_sender('dmo@dmo.ca');
+	$qf->add_recipient('dmo@roaringpenguin.com');
 
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
@@ -97,8 +98,12 @@ N0
 P30000
 Fs
 $_localhost.localdomain [127.0.0.1]
+$rESMTP
 ${daemon_flags}
 S<dmo@dmo.ca>
+C:<dmo@roaringpenguin.com>
+rRFC822; dmo@roaringpenguin.com
+RPFD:dmo@roaringpenguin.com
 H??From: foobar
 H??To: someone
 H??Date: Wed, 07 Nov 2007 14:54:33 -0500
