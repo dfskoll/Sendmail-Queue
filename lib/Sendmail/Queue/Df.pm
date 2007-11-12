@@ -3,7 +3,20 @@ use strict;
 use warnings;
 use Carp;
 
+use File::Spec;
+use IO::File;
+use Fcntl qw( :flock );
+
 use Scalar::Util qw( blessed );
+
+use base qw(Class::Accessor::Fast);
+__PACKAGE__->follow_best_practice;
+__PACKAGE__->mk_accessors( qw(
+	queue_id
+	queue_directory
+	data
+	hardlinked
+) );
 
 =head1 NAME
 
@@ -53,7 +66,7 @@ sub new
 		queue_directory => undef,
 		queue_id => undef,
 		data => undef,
-		is_hardlinked => 0,
+		hardlinked => 0,
 	};
 
 	bless $self, $class;
@@ -75,28 +88,49 @@ sub hardlink_to
 
 	my $target_path = $target;
 
-	if( blessed $target eq 'Sendmail::Queue::Df' ) {
-		$target_path = $target->get_path();
+	if( ref $target && blessed $target eq 'Sendmail::Queue::Df' ) {
+		$target_path = $target->get_data_filename();
 	}
 
 	if( ! -f $target_path ) {
 		die qq{Path $target_path does not exist};
 	}
 
-	if( ! $self->get_path ) {
+	if( ! $self->get_data_filename ) {
 		die qq{Current object has no path to hardlink!}
 	}
 
-	if( ! link $target_path, $self->get_path ) {
+	if( ! link $target_path, $self->get_data_filename ) {
 		die qq{Hard link failed: $!};
 	}
 
-	$self->{is_hardlinked} = 1;
+	$self->{hardlinked} = 1;
 
 	return 1;
 }
 
-=head2 write ( ) 
+sub get_data_filename
+{
+	my ($self) = @_;
+
+	return File::Spec->catfile( $self->get_queue_directory(), 'df' . $self->get_queue_id() );
+}
+
+=head2 set_data_from ( $data_fh )
+
+Given a filehandle, read the data from it, up to the end of file, and
+store it in the object.
+
+=cut
+
+sub set_data_from
+{
+	my ($self, $data_fh) = @_;
+
+	$self->set_data( do { local $/; <$data_fh> } );
+}
+
+=head2 write ( [ $path_to_queue ] ) 
 
 Write data to df file, if necessary.
 
@@ -104,13 +138,44 @@ Write data to df file, if necessary.
 
 sub write
 {
-	my ($self) = @_;
+	my ($self, $path_to_queue) = @_;
 
-	if ( $self->{is_hardlinked} ) {
+	if ( $self->{hardlinked} ) {
 		return 0;
 	}
 
-	# TODO: write data to df file
+	if ( ! $self->get_queue_directory ) {
+		die q{write() requires a queue directory};
+	}
+
+	if( ! $self->get_queue_id() ) {
+		$self->generate_queue_id();
+	}
+
+	my $filepath = $self->get_data_filename();
+
+	if( -e $filepath ) {
+		die qq{File $filepath already exists; write() doesn't know how to overwrite yet};
+	}
+
+	my $fh = IO::File->new( $filepath, O_WRONLY|O_CREAT );
+	if( ! $fh ) {
+		die qq{File $filepath could not be created: $!};
+	}
+
+	if( ! flock $fh, LOCK_EX | LOCK_NB ) {
+		die qq{Couldn't lock $filepath: $!};
+	}
+
+	if( ! $fh->print( $self->get_data ) ) {
+		die qq{Couldn't print to $filepath: $!};
+	}
+
+	if( ! $fh->close ) {
+		die qq{Couldn't close $filepath: $!};
+	}
+
+	return 1;
 }
 
 
