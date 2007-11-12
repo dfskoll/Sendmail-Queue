@@ -159,29 +159,20 @@ sub add_recipient
 	push @{$self->{recipients}}, @recips;
 }
 
-=head2 write ( [ $path_to_queue ] )
+=head2 write ( )
 
 Writes a qfXXXXXXX file using the object's data.
 
-A path to create this queue file under must be provided, either by
-calling ->set_queue_directory(), or by passing $path_to_queue.  If both
-are defined, $path_to_queue will be used.
+A path to create this queue file under must be provided, by first
+calling ->set_queue_directory()
 
 =cut
 
-# TODO: do we want to allow $path_to_queue at all?  It would be nice if
-# the object always knew where it was written to.
-
 sub write
 {
-	my ($self, $path_to_queue) = @_;
+	my ($self) = @_;
 
-	my $filepath;
-	if( $path_to_queue ) {
-		$filepath = $path_to_queue;
-	} elsif ( $self->get_queue_directory ) {
-		$filepath = $self->get_queue_directory;
-	} else {
+	if ( ! $self->get_queue_directory ) {
 		die q{write() requires a queue directory};
 	}
 
@@ -189,7 +180,7 @@ sub write
 		$self->generate_queue_id();
 	}
 
-	$filepath = $self->get_queue_filename();
+	my $filepath = $self->get_queue_filename();
 
 	if( -e $filepath ) {
 		die qq{File $filepath already exists; write() doesn't know how to overwrite yet};
@@ -223,6 +214,10 @@ sub write
 
 	if( ! $fh->print( "$data\n" ) ) {
 		die qq{Couldn't print to $filepath: $!};
+	}
+
+	if( ! $fh->close ) {
+		die qq{Couldn't close $filepath: $!};
 	}
 
 #	warn $data;
