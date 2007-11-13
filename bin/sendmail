@@ -1,0 +1,29 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+
+my $sender;
+while(my $arg = shift @ARGV) {
+	last if $arg =~ /^--$/;
+
+	if( $arg =~ /^-f(.*)/ ) {
+		$sender = $1;
+	}
+}
+
+my @recipients = @ARGV;
+
+my $data = do { local $/; <STDIN> };
+
+use Sendmail::Queue;
+my $queue = Sendmail::Queue->new({
+	QueueDirectory => '/var/spool/mqueue-client',
+});
+
+my $qid = $queue->queue_message({
+	sender => $sender,
+	recipients => \@recipients,
+	data => $data,
+});
+
+print "Queued as $qid\n";
