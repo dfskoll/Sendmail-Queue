@@ -108,6 +108,8 @@ See Bat Book 3rd edition, section 11.2.1
 		#     able to have a collision
 		# so, we just try our best with the info we have and
 		# hope it's good enough.
+		# TODO: alternatively, we can create and lock the queue
+		# file, keeping the lock until we're done with it.
 		my $full_qid = $qid
 			. $base_60_chars[ int($seq / 60) ]
 			. $base_60_chars[ $seq % 60 ]

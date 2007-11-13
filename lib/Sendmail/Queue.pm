@@ -5,6 +5,9 @@ use Carp;
 
 our $VERSION = 0.01;
 
+use Sendmail::Queue::Qf;
+use Sendmail::Queue::Df;
+
 =head1 NAME
 
 Sendmail::Queue - Manipulate Sendmail queues directly
@@ -13,10 +16,23 @@ Sendmail::Queue - Manipulate Sendmail queues directly
 
     use Sendmail::Queue;
 
+    # The high-level interface:
+    #
     # Create a new queue object.  Throws exception on error.
     my $q = Sendmail::Queue->new({
         QueueDirectory => '/var/spool/mqueue'
     });
+
+    my $id = $q->queue_message({
+	sender     => 'user@example.com',
+	recipients => [
+		'first@example.net',
+		'second@example.org',
+	]
+	data      => $string_or_object,
+    });
+
+    # The low-level interface:
 
     # Create a new qf file object
     my $qf = Sendmail::Queue::Qf->new();
@@ -50,7 +66,6 @@ Sendmail::Queue provides a mechanism for directly manipulating Sendmail queue fi
 
 =head1 METHODS
 
-
 =head2 new ( \%args )
 
 Create a new Sendmail::Queue object.
@@ -71,7 +86,16 @@ sub new
 {
 	my ($class, $args) = @_;
 
-	my $self = { %{$args} };
+	$args ||= {};
+
+	if( ! exists $args->{QueueDirectory} ) {
+		die q{QueueDirectory argument must be provided};
+	}
+
+	my $self = {
+		QueueDirectory => $args->{QueueDirectory},
+	};
+
 
 	bless $self, $class;
 
@@ -93,6 +117,50 @@ sub new
 	return $self;
 }
 
+sub queue_message
+{
+	my ($self, $args) = @_;
+
+	foreach my $argname qw( sender recipients data ) {
+		die qq{$argname argument must be specified} unless exists $args->{$argname}
+
+	}
+
+	if( ref $args->{data} ) {
+		die q{data as an object not yet supported};
+	}
+
+	my ($headers, $body) = split(/\n\n/, $args->{data});
+
+	my $qf = Sendmail::Queue::Qf->new();
+	$qf->set_queue_directory($self->{_qf_directory});
+	$qf->set_sender( $args->{sender} );
+	$qf->add_recipient( @{ $args->{recipients} } );
+	$qf->set_headers( $headers );
+	$qf->generate_queue_id();
+
+# TODO Possible better implementation:
+# my $qf = Qf->new;
+# $qf->create_and_lock  # Also generates queue ID.
+# $qf->set_XXXX
+# $qf->write
+#
+# my $df = Df->new
+# $df->set_queue_id( $qf->get_queue_id );
+# $df->write( $data)
+# $df->close;
+# $qf->close;
+
+	my $df = Sendmail::Queue::Df->new();
+	$df->set_queue_directory($self->{_df_directory});
+	$df->set_queue_id( $qf->get_queue_id );
+	$df->set_data( $body );
+
+	$self->enqueue( $qf, $df);
+
+	return $qf->get_queue_id;
+}
+
 # Returns success, or dies.
 sub enqueue
 {
@@ -103,8 +171,8 @@ sub enqueue
 		$qf->write( $self->{_qf_directory} );
 	};
 	if( $@ ) { ## no critic
-		$df->delete();
-		$qf->delete();
+#		$df->delete();
+#		$qf->delete();
 
 		# Rethrow the exception after cleanup
 		die $@;
