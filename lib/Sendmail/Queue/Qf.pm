@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Carp;
 
+use Scalar::Util qw(blessed);
 use File::Spec;
 use IO::File;
 use Fcntl qw( :flock );
@@ -11,6 +12,7 @@ use base qw(Class::Accessor::Fast);
 __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_accessors( qw(
 	queue_id
+	queue_fh
 	queue_directory
 	sender
 	recipients
@@ -26,15 +28,22 @@ Sendmail::Queue::Qf - Represent a Sendmail qfXXXXXXXX (control) file
     use Sendmail::Queue::Qf;
 
     # Create a new qf file object
-    my $qf = Sendmail::Queue::Qf->new();
+    my $qf = Sendmail::Queue::Qf->new({
+	queue_directory => $dir
+    });
 
-    # Generate a Sendmail 8.12-compatible queue ID
-    $qf->generate_queue_id();
+    # Creates a new qf file, locked.
+    $qf->create_and_lock();
+
     $qf->set_defaults();
     $qf->set_sender('me@example.com');
     $qf->add_recipient('you@example.org');
 
     $qf->write( '/path/to/queue');
+
+    $qf->sync();
+
+    $qf->close_and_unlock();
 
 =head1 DESCRIPTION
 
@@ -53,7 +62,7 @@ sub new
 	my ($class, $args) = @_;
 
 	my $self = {
-		queue_directory => undef,
+		queue_directory => $args->{queue_directory},
 		queue_id => undef,
 		sender => undef,
 		recipients => [],
@@ -74,63 +83,80 @@ See Bat Book 3rd edition, section 11.2.1
 
 {
 	my @base_60_chars = ( 0..9, 'A'..'Z', 'a'..'x' );
-	sub generate_queue_id
+	sub _generate_queue_id_template
 	{
-		my ($self) = @_;
-
 		my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime(time);
 
 		# First char is year minus 1900, mod 60
 		# (perl's localtime conveniently gives us the year-1900 already)
 		# 2nd and 3rd are month, day
 		# 4th through 6th are hour, minute, second
-		my $qid = join('', @base_60_chars[
+		# 7th and 8th characters are a random sequence number
+		# (to be filled in later)
+		# 9th through 14th are the PID
+		my $tmpl = join('', @base_60_chars[
 			$year % 60,
 			$mon,
 			$mday,
 			$hour,
 			$min,
-			$sec
-		]);
+			$sec],
+			'%2.2s',
+			sprintf('%06d', $$)
+		);
+	
+		return $tmpl;
+	}
+
+	sub _fill_template
+	{
+		my ($template, $seq_number) = @_;
+
+		return sprintf $template, 
+			$base_60_chars[ int($seq_number / 60) ] . $base_60_chars[ $seq_number % 60 ];
+	}
+
+	sub create_and_lock
+	{
+		my ($self) = @_;
+
+		if( ! -d $self->get_queue_directory ) {
+			die qq{Cannot create queue file without queue directory!};
+		}
 
 		# 7th and 8th is random sequence number
-		my $seq = int( rand(3600) );
+		my $seq = int(rand(3600));
 
-		# PID is 9th through 14th
-		my $pid = sprintf('%06d', $$);
+		my $tmpl = _generate_queue_id_template();
 
-		# This is not great... we want to avoid name
-		# collisions, but:
-		#   - we can only do so if queue_directory is already set
-		#   - it's a huge race condition anyway
-		#   - with the PID in the name, a single-threaded app
-		#     creating less than one per second shouldn't be
-		#     able to have a collision
-		# so, we just try our best with the info we have and
-		# hope it's good enough.
-		# TODO: alternatively, we can create and lock the queue
-		# file, keeping the lock until we're done with it.
-		my $full_qid = $qid
-			. $base_60_chars[ int($seq / 60) ]
-			. $base_60_chars[ $seq % 60 ]
-			. $pid;
-		if( $self->{queue_directory} && -d $self->{queue_directory} ) {
-			my $path = undef;
-			while( ! $path || -e $path ) {
-				if( $path ) {
-					warn "$path exists, incrementing sequence";
+		my $iterations = 0;
+		while( ++$iterations < 3600 ) {
+			my $qid  = _fill_template($tmpl, $seq);
+			my $path = File::Spec->catfile( $self->{queue_directory}, "qf$qid" );
+
+			my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
+			if( $fh ) {
+				if( ! flock $fh, LOCK_EX | LOCK_NB ) {
+					die qq{Couldn't lock $path: $!};
 				}
-				$seq = ($seq + 1) % 360;
-				$full_qid = $qid
-					. $base_60_chars[ int($seq / 60) ]
-					. $base_60_chars[ $seq % 60 ]
-					. $pid;
-				$path = File::Spec->catfile( $self->{queue_directory}, $full_qid );
+				$self->set_queue_id( $qid );
+				$self->set_queue_fh( $fh  );
+				last;
+			} elsif( $! == 17 ) {  # 17 == EEXIST
+				# Try the next one
+				carp "$path exists, incrementing sequence";
+				$seq = ($seq + 1) % 3600;
+			} else {
+				die qq{Error creating qf file $path: $!};
 			}
 
 		}
 
-		return $self->set_queue_id( $full_qid );
+		if ($iterations >= 3600 ) {
+			die qq{Could not create queue file; too many iterations};
+		}
+
+		return 1;
 	}
 }
 
@@ -196,25 +222,6 @@ sub write
 		die q{write() requires a queue directory};
 	}
 
-	if( ! $self->get_queue_id() ) {
-		$self->generate_queue_id();
-	}
-
-	my $filepath = $self->get_queue_filename();
-
-	if( -e $filepath ) {
-		die qq{File $filepath already exists; write() doesn't know how to overwrite yet};
-	}
-
-	my $fh = IO::File->new( $filepath, O_WRONLY|O_CREAT );
-	if( ! $fh ) {
-		die qq{File $filepath could not be created: $!};
-	}
-
-	if( ! flock $fh, LOCK_EX | LOCK_NB ) {
-		die qq{Couldn't lock $filepath: $!};
-	}
-
 	# TODO: should print directly instead of creating a copy in
 	# $data
 	my $data = join("\n",
@@ -232,17 +239,72 @@ sub write
 		$self->_format_headers(),
 	);
 
-	if( ! $fh->print( "$data\n" ) ) {
-		die qq{Couldn't print to $filepath: $!};
+	if( ! $self->get_queue_fh->print( "$data\n" ) ) {
+		die q{Couldn't print to } . $self->get_queue_filename . q{: $!};
 	}
 
-	if( ! $fh->close ) {
-		die qq{Couldn't close $filepath: $!};
-	}
+	# TODO: No, don't do this here.  Should require an explicit
+	# close and/or unlock
+#	if( ! $self->get_queue_fh->close ) {
+#		die qq{Couldn't close $filepath: $!};
+#	}
 
 #	warn $data;
 
 	# TODO: need real return code?
+	return 1;
+}
+
+=head2 sync ( ) 
+
+Force any data written to the current filehandle to be flushed to disk.
+Returns 1 on success, undef if no queue file is open, and will die on error.
+
+=cut
+
+sub sync
+{
+	my ($self) = @_;
+
+	my $fh = $self->get_queue_fh;
+
+	if( ! ($fh && blessed $fh && $fh->isa('IO::Handle')) ) {
+		return undef;
+	}
+
+	if( ! $fh->opened ) {
+		return undef;
+	}
+
+	if( ! $fh->flush ) {
+		carp q{Couldn't flush filehandle!};
+	}
+
+	if( ! $fh->sync ) {
+		carp q{Couldn't sync filehandle!};
+	}
+
+	return 1;
+}
+
+sub close
+{
+	my ($self) = @_;
+
+	my $fh = $self->get_queue_fh;
+
+	if( ! ($fh && blessed $fh && $fh->isa('IO::Handle')) ) {
+		return undef;
+	}
+
+	if( ! $fh->opened ) {
+		return undef;
+	}
+
+	if( ! $fh->close ) {
+		carp q{Couldn't close filehandle!};
+	}
+
 	return 1;
 }
 

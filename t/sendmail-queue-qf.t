@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 12;
 use Test::Exception;
 use File::Temp;
 use File::Slurp;
@@ -24,13 +24,15 @@ BEGIN {
 
 # Generation of queue ID
 {
-	my $qf = Sendmail::Queue::Qf->new();
-	my $qid = $qf->generate_queue_id();
-	is( $qid, $qf->get_queue_id(), 'generate_queue_id() properly saved our queue id');
+	my $qf = Sendmail::Queue::Qf->new({
+		queue_directory => 't/tmp',
+	});
+
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
 }
 
-# Generation of queue ID with directory provided
+# Generation of queue ID after calling set_queue_directory
 {
 	my $qf = Sendmail::Queue::Qf->new();
 
@@ -38,16 +40,13 @@ BEGIN {
 
 	$qf->set_queue_directory( $dir );
 
-	my $qid = $qf->generate_queue_id();
-	is( $qid, $qf->get_queue_id(), 'generate_queue_id() properly saved our queue id');
-	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
-
 	my $count = 0;
 	my $existing_file = "$dir/foo";
 	open(FH,">$existing_file") or die $!;
 	close FH;
 	no warnings 'once';
 	local *File::Spec::catfile = sub {
+
 		if( $count++ < 3 ) {
 			return $existing_file;
 		}
@@ -64,10 +63,9 @@ BEGIN {
 			}
 			warn $_[0] 
 		};
-		$qid = $qf->generate_queue_id();
+		ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	}
 	is( $warn_count, 3, 'Got 3 warnings about duplicate filename');
-	is( $qid, $qf->get_queue_id(), 'generate_queue_id() properly saved our queue id');
 	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
 }
 
@@ -75,6 +73,9 @@ BEGIN {
 # write()
 {
 	my $qf = Sendmail::Queue::Qf->new();
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+
+	$qf->set_queue_directory( $dir );
 
 	# Override so that our test will work
 	no warnings 'redefine';
@@ -83,12 +84,15 @@ BEGIN {
 	$qf->set_sender('dmo@dmo.ca');
 	$qf->add_recipient('dmo@roaringpenguin.com');
 
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
-	$qf->set_queue_directory( $dir );
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	$qf->set_headers("From: foobar\nTo: someone\nDate: Wed, 07 Nov 2007 14:54:33 -0500\n");
 
 	$qf->write();
+
+	ok( $qf->sync, 'sync() succeeded');
+
+	ok( $qf->close, 'close() succeeded' );
 
 	my $expected = <<'END';
 V8
