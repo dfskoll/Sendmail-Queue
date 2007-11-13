@@ -109,9 +109,21 @@ sub hardlink_to
 	return 1;
 }
 
+=head2 get_data_filename
+
+Return the full path name of this data file.
+
+Will die if queue directory is unset.
+
+=cut
+
 sub get_data_filename
 {
 	my ($self) = @_;
+
+	if( ! $self->get_queue_directory ) {
+		die q{queue directory not set};
+	}
 
 	return File::Spec->catfile( $self->get_queue_directory(), 'df' . $self->get_queue_id() );
 }

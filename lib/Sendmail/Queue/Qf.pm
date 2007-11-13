@@ -145,12 +145,30 @@ sub set_defaults
 	die q{TODO};
 }
 
+=head2 get_queue_filename
+
+Return the full path name of this queue file.
+
+Will die if queue directory is unset.
+
+=cut
+
 sub get_queue_filename
 {
 	my ($self) = @_;
 
+	if( ! $self->get_queue_directory ) {
+		die q{queue directory not set};
+	}
+
 	return File::Spec->catfile( $self->get_queue_directory(), 'qf' . $self->get_queue_id() );
 }
+
+=head2 add_recipient ( $recipient [, $recipient, $recipient ] )
+
+Add one or more recipients to this object.
+
+=cut
 
 sub add_recipient
 {
