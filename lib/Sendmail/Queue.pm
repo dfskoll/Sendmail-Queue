@@ -130,7 +130,7 @@ sub queue_message
 		die q{data as an object not yet supported};
 	}
 
-	my ($headers, $body) = split(/\n\n/, $args->{data});
+	my ($headers, $body) = split(/\n\n/, $args->{data}, 2);
 
 	my $qf = Sendmail::Queue::Qf->new();
 	$qf->set_queue_directory($self->{_qf_directory});
@@ -169,6 +169,8 @@ sub enqueue
 	eval {
 		$df->write( $self->{_df_directory} );
 		$qf->write( $self->{_qf_directory} );
+
+		chmod( 0664, $df->get_data_filename, $qf->get_queue_filename) or die qq{chmod fail: $!};
 	};
 	if( $@ ) { ## no critic
 #		$df->delete();
