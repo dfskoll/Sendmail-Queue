@@ -43,7 +43,7 @@ Sendmail::Queue::Qf - Represent a Sendmail qfXXXXXXXX (control) file
 
     $qf->sync();
 
-    $qf->close_and_unlock();
+    $qf->close();
 
 =head1 DESCRIPTION
 
