@@ -142,7 +142,7 @@ sub set_data_from
 	$self->set_data( do { local $/; <$data_fh> } );
 }
 
-=head2 write ( [ $path_to_queue ] ) 
+=head2 write ( ) 
 
 Write data to df file, if necessary.
 
@@ -150,7 +150,7 @@ Write data to df file, if necessary.
 
 sub write
 {
-	my ($self, $path_to_queue) = @_;
+	my ($self) = @_;
 
 	if ( $self->{hardlinked} ) {
 		return 0;

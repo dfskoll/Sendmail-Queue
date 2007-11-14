@@ -185,8 +185,8 @@ sub enqueue
 	my ($self, $qf, $df) = @_;
 
 	eval {
-		$df->write( $self->{_df_directory} );
-		$qf->write( $self->{_qf_directory} );
+		$df->write();
+		$qf->write();
 		$qf->sync();
 		$qf->close();
 
