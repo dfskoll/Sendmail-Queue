@@ -183,6 +183,14 @@ sub write
 		die qq{Couldn't print to $filepath: $!};
 	}
 
+	if( ! $fh->flush ) {
+		die qq{Couldn't flush $filepath: $!};
+	}
+
+	if( ! $fh->sync ) {
+		die qq{Couldn't sync $filepath: $!};
+	}
+
 	if( ! $fh->close ) {
 		die qq{Couldn't close $filepath: $!};
 	}
