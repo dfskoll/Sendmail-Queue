@@ -38,7 +38,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     my $qf = Sendmail::Queue::Qf->new();
 
     # Generate a Sendmail 8.12-compatible queue ID
-    $qf->generate_queue_id();
+    $qf->create_and_lock();
 
     my $df = Sendmail::Queue::Df->new();
 
@@ -117,6 +117,35 @@ sub new
 	return $self;
 }
 
+=head2 queue_message ( $args )
+
+High-level interface for queueing a message.  Creates qf and df files
+in the object's queue directory using the arguments provided.
+
+Returns the queue ID for the queued message.
+
+Required arguments:
+
+=over 4
+
+=item sender
+
+Envelope sender for message.
+
+=item recipients
+
+Array ref containing one or more recipients for this message.
+
+=item data
+
+Scalar containing message headers and body, in mbox format (separated by \n\n).
+
+=back
+
+On error, this method may die() with a number of different runtime errors.
+
+=cut
+
 sub queue_message
 {
 	my ($self, $args) = @_;
@@ -134,22 +163,11 @@ sub queue_message
 
 	my $qf = Sendmail::Queue::Qf->new();
 	$qf->set_queue_directory($self->{_qf_directory});
+
+	$qf->create_and_lock();
 	$qf->set_sender( $args->{sender} );
 	$qf->add_recipient( @{ $args->{recipients} } );
 	$qf->set_headers( $headers );
-	$qf->generate_queue_id();
-
-# TODO Possible better implementation:
-# my $qf = Qf->new;
-# $qf->create_and_lock  # Also generates queue ID.
-# $qf->set_XXXX
-# $qf->write
-#
-# my $df = Df->new
-# $df->set_queue_id( $qf->get_queue_id );
-# $df->write( $data)
-# $df->close;
-# $qf->close;
 
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_directory($self->{_df_directory});
@@ -169,6 +187,8 @@ sub enqueue
 	eval {
 		$df->write( $self->{_df_directory} );
 		$qf->write( $self->{_qf_directory} );
+		$qf->sync();
+		$qf->close();
 
 		chmod( 0664, $df->get_data_filename, $qf->get_queue_filename) or die qq{chmod fail: $!};
 	};
