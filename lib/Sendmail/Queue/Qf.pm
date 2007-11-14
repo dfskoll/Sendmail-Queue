@@ -6,6 +6,7 @@ use Carp;
 use Scalar::Util qw(blessed);
 use File::Spec;
 use IO::File;
+use Time::Local ();
 use Fcntl qw( :flock );
 
 use base qw(Class::Accessor::Fast);
@@ -17,6 +18,13 @@ __PACKAGE__->mk_accessors( qw(
 	sender
 	recipients
 	headers
+	timestamp
+	product_name
+	helo
+	relay_address
+	relay_hostname
+	local_hostname
+	protocol
 ) );
 
 =head1 NAME
@@ -38,6 +46,11 @@ Sendmail::Queue::Qf - Represent a Sendmail qfXXXXXXXX (control) file
     $qf->set_defaults();
     $qf->set_sender('me@example.com');
     $qf->add_recipient('you@example.org');
+
+    $qf->set_headers( $some_header_data );
+
+    # Add a received header using the information already provided
+    $qf->synthesize_received_header();
 
     $qf->write( '/path/to/queue');
 
@@ -65,7 +78,10 @@ sub new
 		queue_directory => $args->{queue_directory},
 		queue_id => undef,
 		sender => undef,
+		headers => '',
 		recipients => [],
+		product_name => 'Sendmail::Queue',
+		local_hostname => 'localhost',
 	};
 
 	bless $self, $class;
@@ -85,7 +101,9 @@ See Bat Book 3rd edition, section 11.2.1
 	my @base_60_chars = ( 0..9, 'A'..'Z', 'a'..'x' );
 	sub _generate_queue_id_template
 	{
-		my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime(time);
+		my ($time) = @_;
+		$time = time unless defined $time;
+		my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime( $time );
 
 		# First char is year minus 1900, mod 60
 		# (perl's localtime conveniently gives us the year-1900 already)
@@ -127,7 +145,7 @@ See Bat Book 3rd edition, section 11.2.1
 		# 7th and 8th is random sequence number
 		my $seq = int(rand(3600));
 
-		my $tmpl = _generate_queue_id_template();
+		my $tmpl = _generate_queue_id_template( $self->get_timestamp );
 
 		my $iterations = 0;
 		while( ++$iterations < 3600 ) {
@@ -166,11 +184,105 @@ Set default values for any unconfigured qf options.
 
 =cut
 
+# TODO: call automatically from constructor?
 sub set_defaults
 {
 	my ($self) = @_;
 
-	die q{TODO};
+	$self->set_timestamp( time );
+
+	warn q{TODO: More defaults};
+}
+
+
+# _tz_diff and _format_rfc2822_date borrowed from Email::Date.  Why?
+# Because they depend on Date::Parse and Time::Piece, and I don't want
+# to add them as dependencies.
+# Similar functions exist in MIMEDefang as well
+sub _tz_diff 
+{
+	my ($time) = @_;
+
+	my $diff  =   Time::Local::timegm(localtime $time)
+	            - Time::Local::timegm(gmtime    $time);
+
+	my $direc = $diff < 0 ? '-' : '+';
+	$diff     = abs $diff;
+	my $tz_hr = int( $diff / 3600 );
+	my $tz_mi = int( $diff / 60 - $tz_hr * 60 );
+
+	return ($direc, $tz_hr, $tz_mi);
+}
+
+sub _format_rfc2822_date 
+{
+	my ($time) = @_;
+	$time = time unless defined $time;
+
+	my ($sec, $min, $hour, $mday, $mon, $year, $wday) = localtime $time;
+	my $day   = (qw[Sun Mon Tue Wed Thu Fri Sat])[$wday];
+	my $month = (qw[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec])[$mon];
+	$year += 1900;
+
+	my ($direc, $tz_hr, $tz_mi) = _tz_diff($time);
+
+	sprintf "%s, %d %s %d %02d:%02d:%02d %s%02d%02d",
+	    $day, $mday, $month, $year, $hour, $min, $sec, $direc, $tz_hr, $tz_mi;
+}
+
+
+sub synthesize_received_header
+{
+	my ($self) = @_;
+
+	my $header = 'Received: ';
+
+	# Add relay address, if we have one
+	if( $self->get_relay_address ) {
+		$header .= 'from';
+		if( $self->get_helo ) {
+			$header .= ' ' . $self->get_helo;
+		}
+		my $relay_info = "[" . $self->get_relay_address() . "]";
+		if( $self->get_relay_hostname() ne $relay_info ) {
+			$relay_info = $self->get_relay_hostname() . ' ' . $relay_info;
+		}
+		$header .= ' (' . $relay_info . ')';
+	} else {
+		$header .= "(from $ENV{USER}\@localhost)";
+	}
+
+	my $protocol = $self->get_protocol() || '';
+
+	if( $self->get_local_hostname() ) {
+		$header .= "\n\tby " . $self->get_local_hostname();
+		if( $protocol =~ /e?smtp/i ) {
+			$header .= ' (envelope-sender '
+			        . $self->get_sender()
+			        . ')';
+		}
+	}
+
+	if( $self->get_product_name() ) {
+		$header .= ' ('
+		        . $self->get_product_name()
+			. ')';
+	}
+
+	if( $protocol =~ /e?smtp/i ) {
+		$header .= " with $protocol";
+	}
+
+	$header .= ' id ' . $self->get_queue_id();
+
+	# If more than one recipient, don't specify to protect privacy
+	if( scalar @{ $self->get_recipients } > 1 ) {
+		$header .= "\n\tfor " . $self->get_recipients->[0];
+	}
+
+	$header .= '; ' . _format_rfc2822_date( $self->get_timestamp() );
+
+	$self->{headers} = join("\n", $header, $self->{headers});
 }
 
 =head2 get_queue_filename
@@ -310,13 +422,14 @@ sub close
 
 sub _format_qf_version
 {
-	# Bat Book only describes V6!
+	# TODO Bat Book only describes V6!
 	return "V8";
 }
 
 sub _format_create_time
 {
-	return 'T' . time;
+	my ($self) = @_;
+	return 'T' . $self->get_timestamp();
 }
 
 sub _format_last_processed

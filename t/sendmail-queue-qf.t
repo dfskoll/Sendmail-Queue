@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 12;
+use Test::More tests => 15;
 use Test::Exception;
 use File::Temp;
 use File::Slurp;
@@ -77,9 +77,7 @@ BEGIN {
 
 	$qf->set_queue_directory( $dir );
 
-	# Override so that our test will work
-	no warnings 'redefine';
-	local *Sendmail::Queue::Qf::_format_create_time = sub { 'T1234567890' };
+	$qf->set_timestamp ( 1234567890 );
 
 	$qf->set_sender('dmo@dmo.ca');
 	$qf->add_recipient('dmo@roaringpenguin.com');
@@ -116,4 +114,38 @@ END
 
 	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
 
+}
+
+# synthesize_received_header
+{
+	my $qf = Sendmail::Queue::Qf->new();
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+
+	$qf->set_queue_directory( $dir );
+	$qf->set_defaults();
+	$qf->set_timestamp('1195000000');
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+
+	# First, try it with no values set.
+	$qf->synthesize_received_header();
+	my $r_hdr = qr/^Received: \(from dmo\@localhost\)\n\tby localhost \(Sendmail::Queue\) id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500\n$/;
+	like( $qf->get_headers(), $r_hdr, 'Got expected Received header');
+
+	# Wipe and try again
+	$qf->set_headers('');
+
+	$qf->set_sender('dmo@dmo.ca');
+	$qf->set_helo('loser');
+	$qf->set_protocol('ESMTP');
+	$qf->set_relay_address('999.888.777.666');
+	$qf->set_relay_hostname('broken.dynamic.server.example.com');
+	$qf->set_local_hostname('mail.roaringpenguin.com');
+	$qf->add_recipient('dmo@roaringpenguin.com');
+
+
+	$qf->synthesize_received_header();
+	$r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
+	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500\n$/;
+
+	like( $qf->get_headers(), $r_hdr, 'Got expected Received header');
 }

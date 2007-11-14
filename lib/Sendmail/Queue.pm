@@ -23,6 +23,8 @@ Sendmail::Queue - Manipulate Sendmail queues directly
         QueueDirectory => '/var/spool/mqueue'
     });
 
+    # Queue one copy of a message (one qf, one df)
+    # TODO: synthesize a Received: header ?
     my $id = $q->queue_message({
 	sender     => 'user@example.com',
 	recipients => [
@@ -31,6 +33,10 @@ Sendmail::Queue - Manipulate Sendmail queues directly
 	]
 	data      => $string_or_object,
     });
+
+    # Queue multiple copies of a message using multiple envelopes, but
+    # the same body
+    # TODO: replaces MIMEDefang resend_message()?
 
     # The low-level interface:
 
