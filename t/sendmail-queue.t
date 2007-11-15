@@ -12,7 +12,7 @@ BEGIN {
 # Constructor
 {
 	my $qf = Sendmail::Queue->new({
-		QueueDirectory => 't/tmp',
+		queue_directory => 't/tmp',
 	});
 	isa_ok( $qf, 'Sendmail::Queue');
 }
@@ -23,7 +23,7 @@ BEGIN {
 	my $dir = 't/tmp';
 
 	my $queue = Sendmail::Queue->new({
-		QueueDirectory => $dir,
+		queue_directory => $dir,
 	});
 
 	my $data = <<EOM;

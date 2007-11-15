@@ -7,6 +7,7 @@ our $VERSION = 0.01;
 
 use Sendmail::Queue::Qf;
 use Sendmail::Queue::Df;
+use File::Spec;
 
 =head1 NAME
 
@@ -20,7 +21,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     #
     # Create a new queue object.  Throws exception on error.
     my $q = Sendmail::Queue->new({
-        QueueDirectory => '/var/spool/mqueue'
+        queue_directory => '/var/spool/mqueue'
     });
 
     # Queue one copy of a message (one qf, one df)
@@ -79,9 +80,10 @@ Required arguments are:
 
 =over 4
 
-=item QueueDirectory
+=item queue_directory
 
-The queue directory to use.
+The queue directory to use.  Should (usually) be the same as your
+Sendmail QueueDirectory variable for the client submission queue.
 
 =back
 
@@ -93,30 +95,28 @@ sub new
 
 	$args ||= {};
 
-	if( ! exists $args->{QueueDirectory} ) {
-		die q{QueueDirectory argument must be provided};
+	if( ! exists $args->{queue_directory} ) {
+		die q{queue_directory argument must be provided};
 	}
 
 	my $self = {
-		QueueDirectory => $args->{QueueDirectory},
+		queue_directory => $args->{queue_directory},
 	};
 
 
 	bless $self, $class;
 
-	if( ! -d $self->{QueueDirectory} ) {
+	if( ! -d $self->{queue_directory} ) {
 		die q{ Queue directory doesn't exist};
 	}
 
-	if( -d "$self->{QueueDirectory}/qf" ) {  # TODO:: Use File::Path
-		# We have separate /qf, /df, /xf, maybe
-		# TODO:
-		# 	- verify that all three exist
-		# 	- update _qf_directory and _df_directory
-		# 	appropriately
+	if( -d File::Spec->catfile($self->{queue_directory},'qf')
+ 	    && -d File::Spec->catfile($self->{queue_directory},'df') ) {
+		$self->{_qf_directory} = File::Spec->catfile($self->{queue_directory},'qf');
+		$self->{_df_directory} = File::Spec->catfile($self->{queue_directory},'df');
 	} else {
-		$self->{_qf_directory} = $self->{QueueDirectory};
-		$self->{_df_directory} = $self->{QueueDirectory};
+		$self->{_qf_directory} = $self->{queue_directory};
+		$self->{_df_directory} = $self->{queue_directory};
 	}
 
 	return $self;

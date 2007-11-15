@@ -17,7 +17,7 @@ my $data = do { local $/; <STDIN> };
 
 use Sendmail::Queue;
 my $queue = Sendmail::Queue->new({
-	QueueDirectory => '/var/spool/mqueue-client',
+	queue_directory => '/var/spool/mqueue-client',
 });
 
 my $qid = $queue->queue_message({
