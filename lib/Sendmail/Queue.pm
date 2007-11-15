@@ -24,7 +24,6 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     });
 
     # Queue one copy of a message (one qf, one df)
-    # TODO: synthesize a Received: header ?
     my $id = $q->queue_message({
 	sender     => 'user@example.com',
 	recipients => [
@@ -148,6 +147,46 @@ Scalar containing message headers and body, in mbox format (separated by \n\n).
 
 =back
 
+Optional arguments may be specified as well.  These will be handed off
+directly to the underlying Sendmail::Queue::Qf object:
+
+=over 4
+
+=item product_name
+
+Name to use for this product in the generated Recieved: header.  May be
+set to blank or undef to disable.  Defaults to 'Sendmail::Queue'.
+
+=item helo
+
+The HELO or EHLO name provided by the host that sent us this message,
+or undef if none.  Defaults to undef.
+
+=item relay_address
+
+The IP address of the host that sent us this message, or undef if none.
+Defaults to undef.
+
+=item relay_hostname
+
+The name of the host that sent us this message, or undef if none.
+Defaults to undef.
+
+=item local_hostname
+
+The name of the host that received this message.  Defaults to 'localhost'
+
+=item protocol
+
+Protocol over which this message was received.  Valid values are blank,
+SMTP, and ESMTP.  Default is blank.
+
+=item timestamp
+
+A UNIX seconds-since-epoch timestamp.  If omitted, defaults to current time.
+
+=back
+
 On error, this method may die() with a number of different runtime errors.
 
 =cut
@@ -170,10 +209,22 @@ sub queue_message
 	my $qf = Sendmail::Queue::Qf->new();
 	$qf->set_queue_directory($self->{_qf_directory});
 
+	# Allow passing of optional info down to Qf object
+	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
+		if( exists $args->{$optarg} ) {
+			$qf->set( $optarg, $args->{$optarg} );
+		}
+	}
+
+
 	$qf->create_and_lock();
 	$qf->set_sender( $args->{sender} );
 	$qf->add_recipient( @{ $args->{recipients} } );
+
 	$qf->set_headers( $headers );
+
+	# Generate a Received header
+	$qf->synthesize_received_header();
 
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_directory($self->{_df_directory});

@@ -26,10 +26,6 @@ BEGIN {
 		QueueDirectory => $dir,
 	});
 
-	# Override so that our test will work
-	no warnings 'redefine';
-	local *Sendmail::Queue::Qf::_format_create_time = sub { 'T1234567890' };
-
 	my $data = <<EOM;
 From: foobar
 To: someone
@@ -46,31 +42,34 @@ EOM
 			'dmo@roaringpenguin.com',
 			'dfs@roaringpenguin.com',
 		],
-		data => $data
+		data => $data,
+		timestamp => 1234567890,
 	});
 
-	my $qf_expected = <<'EOM';
-V8
+	my $qf_regex = qr/^V8
 T1234567890
 K0
 N0
 P30000
 Fs
-$_localhost.localdomain [127.0.0.1]
-$rESMTP
-${daemon_flags}
-S<dmo@dmo.ca>
-C:<dmo@roaringpenguin.com>
-rRFC822; dmo@roaringpenguin.com
-RPFD:dmo@roaringpenguin.com
-C:<dfs@roaringpenguin.com>
-rRFC822; dfs@roaringpenguin.com
-RPFD:dfs@roaringpenguin.com
-H??From: foobar
-H??To: someone
-H??Date: Wed, 07 Nov 2007 14:54:33 -0500
+\$_localhost.localdomain \[127\.0\.0\.1\]
+\$rESMTP
+\${daemon_flags}
+S<dmo\@dmo.ca>
+C:<dmo\@roaringpenguin.com>
+rRFC822; dmo\@roaringpenguin.com
+RPFD:dmo\@roaringpenguin.com
+C:<dfs\@roaringpenguin.com>
+rRFC822; dfs\@roaringpenguin.com
+RPFD:dfs\@roaringpenguin.com
+H\?\?Received: \(from dmo\@localhost\)
+	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}
+	for dmo\@roaringpenguin.com; Fri, 13 Feb 2009 18:31:30 -0500
+H\?\?From: foobar
+H\?\?To: someone
+H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
 .
-EOM
+$/;
 
 	my $df_expected =<<'EOM';
 Test message
@@ -78,7 +77,7 @@ Test message
 Dave
 EOM
 
-	is( File::Slurp::slurp( "$dir/qf$qid" ), $qf_expected, 'Wrote expected qf data');
+	like( File::Slurp::slurp( "$dir/qf$qid" ), $qf_regex, 'Wrote expected qf data');
 	is( File::Slurp::slurp( "$dir/df$qid" ), $df_expected, 'Wrote expected df data');
 
 }
