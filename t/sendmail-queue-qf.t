@@ -123,7 +123,7 @@ END
 
 	$qf->set_queue_directory( $dir );
 	$qf->set_defaults();
-	$qf->set_timestamp('1195000000');
+	$qf->set_timestamp(1195000000);
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 
 	# First, try it with no values set.

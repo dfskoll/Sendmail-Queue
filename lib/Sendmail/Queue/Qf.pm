@@ -82,6 +82,7 @@ sub new
 		recipients => [],
 		product_name => 'Sendmail::Queue',
 		local_hostname => 'localhost',
+		timestamp => time,
 	};
 
 	bless $self, $class;
@@ -188,8 +189,6 @@ Set default values for any unconfigured qf options.
 sub set_defaults
 {
 	my ($self) = @_;
-
-	$self->set_timestamp( time );
 
 	warn q{TODO: More defaults};
 }
@@ -495,9 +494,10 @@ sub _format_headers
 {
 	my ($self) = @_;
 
-	my @out;
-	foreach my $line ( split /\s*\n\s*/, $self->get_headers ) {
-		# TODO: proper wrapping of header lines
+	my $out;
+	foreach my $line ( split /\n/, $self->get_headers ) {
+		# TODO: proper wrapping of header lines at max length
+
 
 		# TODO: proper escaping of header data (see Bat Book,
 		# ch 25).  We need to be sure that we're not allowing
@@ -508,10 +508,15 @@ sub _format_headers
 		# Even Return-Path, which ordinarily has ?P?, we shall
 		# ignore flags for, as we want to pass on every header
 		# that we originally received.
-		push @out, "H??$line";
+		# Handle already-wrapped lines properly
+		if( $line =~ /^\t/ ) {
+			$out .= "$line\n";
+		} else {
+			$out .=  "H??$line\n";
+		}
 	}
-	push @out, '.';
-	return join("\n", @out);
+	$out .= '.';
+	return $out;
 }
 
 sub _format_recipient_addresses
