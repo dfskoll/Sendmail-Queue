@@ -8,6 +8,8 @@ our $VERSION = 0.01;
 use Sendmail::Queue::Qf;
 use Sendmail::Queue::Df;
 use File::Spec;
+use IO::Handle;
+use Fcntl;
 
 =head1 NAME
 
@@ -31,12 +33,24 @@ Sendmail::Queue - Manipulate Sendmail queues directly
 		'first@example.net',
 		'second@example.org',
 	]
-	data      => $string_or_object,
+	data       => $string_or_object,
     });
 
     # Queue multiple copies of a message using multiple envelopes, but
-    # the same body
-    # TODO: replaces MIMEDefang resend_message()?
+    # the same body.  Results contain the recipient set name as key,
+    # and the queue ID as the value.
+    my %results = $q->queue_multiple({
+	sender         => 'user@example.com',
+	recipient_sets => {
+		'set one' => [
+			'first@example.net',
+			'second@example.org',
+		],
+		'set two' => [
+		],
+	},
+	data           => $string_or_object,
+    });
 
     # The low-level interface:
 
@@ -260,12 +274,129 @@ sub enqueue
 	return 1;
 }
 
+
+=head2 queue_multiple ( $args )
+
+Queue multiple copies of a message using multiple envelopes, but the
+same body.
+
+Returns a results hash containing the recipient set name as key, and the
+queue ID as the value.
+
+
+    my %results = $q->queue_multiple({
+	sender         => 'user@example.com',
+	recipient_sets => {
+		'set one' => [
+			'first@example.net',
+			'second@example.org',
+		],
+		'set two' => [
+		],
+	},
+	data           => $string_or_object,
+    });
+
+=cut
+
+sub queue_multiple
+{
+	my ($self, $args) = @_;
+
+	foreach my $argname qw( sender recipient_sets data ) {
+		die qq{$argname argument must be specified} unless exists $args->{$argname}
+
+	}
+
+	if( ref $args->{data} ) {
+		die q{data as an object not yet supported};
+	}
+
+	my ($headers, $body) = split(/\n\n/, $args->{data}, 2);
+
+	my $qf = Sendmail::Queue::Qf->new();
+	$qf->set_queue_directory($self->{_qf_directory});
+
+	# Allow passing of optional info down to Qf object
+	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
+		if( exists $args->{$optarg} ) {
+			$qf->set( $optarg, $args->{$optarg} );
+		}
+	}
+
+	# Prepare a generic queue file
+	$qf->set_sender( $args->{sender} );
+	$qf->set_headers( $headers );
+
+	my ($first_qf, $first_df);
+
+	my %results;
+
+	# Now, loop over all of the rest
+	foreach my $set_key ( keys %{ $args->{recipient_sets} }) {
+		my $cur_qf = $qf->clone();
+		$cur_qf->add_recipient( @{ $args->{recipient_sets}{$set_key} } );
+		$cur_qf->create_and_lock();
+		$cur_qf->synthesize_received_header();
+		$cur_qf->write();
+		$cur_qf->sync();
+
+		my $cur_df = Sendmail::Queue::Df->new();
+		if( ! $first_qf ) {
+			# If this is the first one, create and write
+			# the df file, and leave the qf open and
+			# locked.
+			$first_qf = $cur_qf;
+			$first_df = $cur_df;
+			$first_df->set_queue_directory($self->{_df_directory});
+			$first_df->set_queue_id( $cur_qf->get_queue_id );
+			$first_df->set_data( $body );
+			$first_df->write();
+		} else {
+			# Otherwise
+			$cur_df->hardlink_to( $first_df->get_data_filename() );
+			$cur_qf->close();
+		}
+
+		$results{ $set_key } = $cur_qf->get_queue_id;
+	}
+
+	# Close the first queue file to release the lock
+	$first_qf->close();
+
+	# TODO: sync the df directory
+	$self->sync();
+
+	return \%results;
+}
+
+=head2 sync ( )
+
+Ensure that the queue directories have been synced.
+
+=cut
+
 sub sync
 {
-	# TODO: open the _df_directory/_qf_directory explicitly and
-	# fsync it so that the directory entries are synced.
-	# We do this because file writes can be sync'ed when closed,
-	# but any hardlinks won't be unless we sync the dir
+	my ($self) = @_;
+
+	# Evil hack.  Why?  Well:
+	#   - you can't fsync() a filehandle directly, you must use
+	#     IO::Handle->sync
+	# so, we have to sysopen to a filehandle glob, and then fdopen
+	# the fileno we get from that glob.
+
+	my $directory = $self->{_df_directory};
+
+	sysopen(DIR_FH, $directory, O_RDONLY) or die qq{Couldn't sysopen $directory: $!};
+
+	my $handle = IO::Handle->new();
+	$handle->fdopen(fileno(DIR_FH), "w") or die qq{Couldn't fdopen the directory handle: $!};
+	$handle->sync or die qq{Couldn't sync: $!};
+
+	close(FOO);
+
+	return 1;
 }
 
 1;
