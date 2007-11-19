@@ -342,14 +342,14 @@ sub queue_multiple
 		$cur_qf->sync();
 
 		my $cur_df = Sendmail::Queue::Df->new();
+		$cur_df->set_queue_directory($self->{_df_directory});
+		$cur_df->set_queue_id( $cur_qf->get_queue_id );
 		if( ! $first_qf ) {
 			# If this is the first one, create and write
 			# the df file, and leave the qf open and
 			# locked.
 			$first_qf = $cur_qf;
 			$first_df = $cur_df;
-			$first_df->set_queue_directory($self->{_df_directory});
-			$first_df->set_queue_id( $cur_qf->get_queue_id );
 			$first_df->set_data( $body );
 			$first_df->write();
 		} else {
