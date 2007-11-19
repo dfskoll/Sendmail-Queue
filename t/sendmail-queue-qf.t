@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 29;
+use Test::More tests => 30;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
@@ -25,12 +25,15 @@ BEGIN {
 
 # Generation of queue ID
 {
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+
 	my $qf = Sendmail::Queue::Qf->new({
-		queue_directory => 't/tmp',
+		queue_directory => $dir,
 	});
 
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
+	ok( -r "$dir/qf" . $qf->get_queue_id, 'Queue file exists');
 }
 
 # Generation of queue ID after calling set_queue_directory
