@@ -286,7 +286,7 @@ sub synthesize_received_header
 	$header .= ' id ' . $self->get_queue_id();
 
 	# If more than one recipient, don't specify to protect privacy
-	if( scalar @{ $self->get_recipients } > 1 ) {
+	if( scalar @{ $self->get_recipients } == 1 ) {
 		$header .= "\n\tfor " . $self->get_recipients->[0];
 	}
 

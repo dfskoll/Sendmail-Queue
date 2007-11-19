@@ -64,8 +64,7 @@ C:<dfs\@roaringpenguin.com>
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
-	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}
-	for dmo\@roaringpenguin.com; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
@@ -143,8 +142,7 @@ C:<dfs\@roaringpenguin.com>
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
-	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}
-	for dmo\@roaringpenguin.com; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
@@ -168,8 +166,7 @@ C:<bar\@roaringpenguin.com>
 rRFC822; bar\@roaringpenguin.com
 RPFD:bar\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
-	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}
-	for foo\@roaringpenguin.com; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(Sendmail::Queue\) id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500

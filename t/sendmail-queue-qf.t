@@ -146,7 +146,7 @@ END
 
 	$qf->synthesize_received_header();
 	$r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
-	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor dmo\@roaringpenguin\.com; Tue, 13 Nov 2007 19:26:40 -0500$/;
 
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 }
@@ -169,7 +169,7 @@ END
 
 	$qf->synthesize_received_header();
 	my $r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
-	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor dmo\@roaringpenguin\.com; Tue, 13 Nov 2007 19:26:40 -0500$/;
 
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 
