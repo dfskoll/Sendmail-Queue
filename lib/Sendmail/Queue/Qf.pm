@@ -25,6 +25,7 @@ __PACKAGE__->mk_accessors( qw(
 	relay_hostname
 	local_hostname
 	protocol
+	received_header
 ) );
 
 =head1 NAME
@@ -236,7 +237,7 @@ sub _format_rfc2822_date
 Create a properly-formatted Received: header for this message, using
 any data available from the object.
 
-The generated header is prepended to the internal headers list.
+The generated header is saved internally as 'received_header'.
 
 =cut
 
@@ -291,7 +292,7 @@ sub synthesize_received_header
 
 	$header .= '; ' . _format_rfc2822_date( $self->get_timestamp() );
 
-	$self->{headers} = join("\n", $header, $self->{headers});
+	$self->{received_header} = $header;
 }
 
 =head2 get_queue_filename
@@ -448,10 +449,13 @@ Return a clone of this Sendmail::Queue::Qf object, containing everything EXCEPT:
 
 =item * open queue filehandle
 
+=item * synthesized Received: header
+
 =back
 
 =cut
 my %skip_for_clone = (
+	received_header => 1,
 	recipients => 1,
 	queue_id   => 1,
 	queue_fh   => 1,
@@ -553,9 +557,11 @@ sub _format_headers
 	my ($self) = @_;
 
 	my $out;
-	foreach my $line ( split /\n/, $self->get_headers ) {
-		# TODO: proper wrapping of header lines at max length
 
+	# Ensure we prepend our generated received header, if it
+	# exists.
+	foreach my $line ( split(/\n/, $self->get_received_header || ''), split(/\n/, $self->get_headers) ) {
+		# TODO: proper wrapping of header lines at max length
 
 		# TODO: proper escaping of header data (see Bat Book,
 		# ch 25).  We need to be sure that we're not allowing
