@@ -233,6 +233,14 @@ sub _format_rfc2822_date
 	    $day, $mday, $month, $year, $hour, $min, $sec, $direc, $tz_hr, $tz_mi;
 }
 
+=head2 synthesize_received_header ( )
+
+Create a properly-formatted Received: header for this message, using
+any data available from the object.
+
+The generated header is prepended to the internal headers list.
+
+=cut
 
 sub synthesize_received_header
 {
@@ -402,6 +410,13 @@ sub sync
 	return 1;
 }
 
+=head2 close ( )
+
+Returns true on success, false (as undef) if filehandle doesn't exist
+or wasn't open, and dies if closing the filehandle fails.
+
+=cut
+
 sub close
 {
 	my ($self) = @_;
@@ -417,7 +432,7 @@ sub close
 	}
 
 	if( ! $fh->close ) {
-		carp q{Couldn't close filehandle!};
+		croak q{Couldn't close filehandle!};
 	}
 
 	return 1;
