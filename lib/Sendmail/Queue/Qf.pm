@@ -142,8 +142,6 @@ sub create_and_lock
 {
 	my ($self) = @_;
 
-	carp "In create_and_lock";
-
 	if( ! -d $self->get_queue_directory ) {
 		die qq{Cannot create queue file without queue directory!};
 	}
@@ -437,6 +435,47 @@ sub close
 
 	return 1;
 }
+
+=head2 clone ( )
+
+Return a clone of this Sendmail::Queue::Qf object, containing everything EXCEPT:
+
+=over 4
+
+=item * recipients
+
+=item * queue ID
+
+=item * open queue filehandle
+
+=back
+
+=cut
+my %skip_for_clone = (
+	recipients => 1,
+	queue_id   => 1,
+	queue_fh   => 1,
+);
+
+sub clone
+{
+	my ($self) = @_;
+
+	my $clone = Sendmail::Queue::Qf->new();
+
+
+	my @keys = keys %{ $self };
+
+	foreach my $key (@keys) {
+		next if exists $skip_for_clone{$key};
+		$clone->{$key} = $self->{$key};
+	}
+
+	return $clone;
+}
+
+
+# Internal methods
 
 sub _format_qf_version
 {

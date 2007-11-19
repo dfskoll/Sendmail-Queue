@@ -1,7 +1,8 @@
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 29;
 use Test::Exception;
+use Test::Deep;
 use File::Temp;
 use File::Slurp;
 
@@ -148,4 +149,39 @@ END
 	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500\n$/;
 
 	like( $qf->get_headers(), $r_hdr, 'Got expected Received header');
+}
+
+# clone
+{
+	my $qf = Sendmail::Queue::Qf->new();
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	$qf->set_queue_directory( $dir );
+	$qf->set_defaults();
+	$qf->set_timestamp(1195000000);
+	$qf->set_sender('dmo@dmo.ca');
+	$qf->set_helo('loser');
+	$qf->set_protocol('ESMTP');
+	$qf->set_relay_address('999.888.777.666');
+	$qf->set_relay_hostname('broken.dynamic.server.example.com');
+	$qf->set_local_hostname('mail.roaringpenguin.com');
+	$qf->add_recipient('dmo@roaringpenguin.com');
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+
+	$qf->synthesize_received_header();
+	my $r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
+	by mail.roaringpenguin.com (envelope-sender dmo\E\@dmo.ca\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500\n$/;
+
+	like( $qf->get_headers(), $r_hdr, 'Got expected Received header');
+
+	my $clone;
+	lives_ok { $clone = $qf->clone() } 'clone() lives';
+	isa_ok($clone, 'Sendmail::Queue::Qf');
+
+	foreach my $key (qw(timestamp sender helo protocol relay_address relay_hostname local_hostname)) {
+		is( $clone->get($key), $qf->get($key), "clone has correct $key");
+	}
+
+	cmp_deeply( $clone->get_recipients, [], 'clone has empty recipients');
+	is( $clone->get_queue_id, undef, 'clone has no queue id');
+	is( $clone->get_queue_fh, undef, 'clone has no queue fh');
 }
