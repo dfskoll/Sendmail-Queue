@@ -394,7 +394,7 @@ sub sync
 	$handle->fdopen(fileno(DIR_FH), "w") or die qq{Couldn't fdopen the directory handle: $!};
 	$handle->sync or die qq{Couldn't sync: $!};
 
-	close(FOO);
+	close(DIR_FH);
 
 	return 1;
 }
