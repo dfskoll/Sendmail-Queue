@@ -90,14 +90,6 @@ sub new
 	return $self;
 }
 
-=head2 generate_queue_id ( )
-
-Generate a Sendmail 8.12-compatible queue ID for this qf file.
-
-See Bat Book 3rd edition, section 11.2.1
-
-=cut
-
 {
 	my @base_60_chars = ( 0..9, 'A'..'Z', 'a'..'x' );
 	sub _generate_queue_id_template
@@ -134,49 +126,61 @@ See Bat Book 3rd edition, section 11.2.1
 		return sprintf $template, 
 			$base_60_chars[ int($seq_number / 60) ] . $base_60_chars[ $seq_number % 60 ];
 	}
+}
 
-	sub create_and_lock
-	{
-		my ($self) = @_;
+=head2 create_and_lock ( )
 
-		if( ! -d $self->get_queue_directory ) {
-			die qq{Cannot create queue file without queue directory!};
-		}
+Generate a Sendmail 8.12-compatible queue ID, and create a locked qf
+file with that name.
 
-		# 7th and 8th is random sequence number
-		my $seq = int(rand(3600));
+See Bat Book 3rd edition, section 11.2.1 for information on how the
+queue file name is generated.
 
-		my $tmpl = _generate_queue_id_template( $self->get_timestamp );
+=cut
 
-		my $iterations = 0;
-		while( ++$iterations < 3600 ) {
-			my $qid  = _fill_template($tmpl, $seq);
-			my $path = File::Spec->catfile( $self->{queue_directory}, "qf$qid" );
+sub create_and_lock
+{
+	my ($self) = @_;
 
-			my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
-			if( $fh ) {
-				if( ! flock $fh, LOCK_EX | LOCK_NB ) {
-					die qq{Couldn't lock $path: $!};
-				}
-				$self->set_queue_id( $qid );
-				$self->set_queue_fh( $fh  );
-				last;
-			} elsif( $! == 17 ) {  # 17 == EEXIST
-				# Try the next one
-				carp "$path exists, incrementing sequence";
-				$seq = ($seq + 1) % 3600;
-			} else {
-				die qq{Error creating qf file $path: $!};
-			}
+	carp "In create_and_lock";
 
-		}
-
-		if ($iterations >= 3600 ) {
-			die qq{Could not create queue file; too many iterations};
-		}
-
-		return 1;
+	if( ! -d $self->get_queue_directory ) {
+		die qq{Cannot create queue file without queue directory!};
 	}
+
+	# 7th and 8th is random sequence number
+	my $seq = int(rand(3600));
+
+	my $tmpl = _generate_queue_id_template( $self->get_timestamp );
+
+	my $iterations = 0;
+	while( ++$iterations < 3600 ) {
+		my $qid  = _fill_template($tmpl, $seq);
+		my $path = File::Spec->catfile( $self->{queue_directory}, "qf$qid" );
+
+		my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
+		if( $fh ) {
+			if( ! flock $fh, LOCK_EX | LOCK_NB ) {
+				die qq{Couldn't lock $path: $!};
+			}
+			$self->set_queue_id( $qid );
+			$self->set_queue_fh( $fh  );
+			last;
+		} elsif( $! == 17 ) {  # 17 == EEXIST
+			# Try the next one
+			carp "$path exists, incrementing sequence";
+			$seq = ($seq + 1) % 3600;
+		} else {
+			die qq{Error creating qf file $path: $!};
+		}
+
+	}
+
+	if ($iterations >= 3600 ) {
+		die qq{Could not create queue file; too many iterations};
+	}
+
+	return 1;
 }
 
 =head2 set_defaults ( )
