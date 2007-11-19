@@ -364,7 +364,6 @@ sub queue_multiple
 	# Close the first queue file to release the lock
 	$first_qf->close();
 
-	# TODO: sync the df directory
 	$self->sync();
 
 	return \%results;

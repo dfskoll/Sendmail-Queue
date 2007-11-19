@@ -116,7 +116,7 @@ sub new
 			'%2.2s',
 			sprintf('%06d', $$)
 		);
-	
+
 		return $tmpl;
 	}
 
@@ -365,19 +365,11 @@ sub write
 		die q{Couldn't print to } . $self->get_queue_filename . q{: $!};
 	}
 
-	# TODO: No, don't do this here.  Should require an explicit
-	# close and/or unlock
-#	if( ! $self->get_queue_fh->close ) {
-#		die qq{Couldn't close $filepath: $!};
-#	}
-
-#	warn $data;
-
 	# TODO: need real return code?
 	return 1;
 }
 
-=head2 sync ( ) 
+=head2 sync ( )
 
 Force any data written to the current filehandle to be flushed to disk.
 Returns 1 on success, undef if no queue file is open, and will die on error.
@@ -595,7 +587,10 @@ sub _format_recipient_addresses
 	my @out;
 
 	foreach my $recip ( @{$recips} ) {
-		# TODO: Sanitize $recip before using ?
+		# TODO: Sanitize $recip before using:
+		# 	- make safe (if necessary... does sendmail
+		# 	  croak on anything?)
+		# 	- remove extra < >
 
 		push @out, "C:<$recip>";
 		push @out, "rRFC822; $recip";

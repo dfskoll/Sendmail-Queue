@@ -61,8 +61,7 @@ sub new
 {
 	my ($class, $args) = @_;
 
-	# TODO: need get/set methods for these
-	my $self = { 
+	my $self = {
 		queue_directory => undef,
 		queue_id => undef,
 		data => undef,
