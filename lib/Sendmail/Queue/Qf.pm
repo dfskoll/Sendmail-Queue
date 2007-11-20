@@ -333,30 +333,29 @@ sub write
 		die q{write() requires a queue directory};
 	}
 
-	if ( ! $self->get_queue_fh
-	    || ! $self->get_queue_fh->opened ) {
+	my $fh = $self->get_queue_fh;
+
+	if ( ! $fh || ! $fh->opened ) {
 		die q{write() cannot write without an open filehandle};
 	}
 
-	# TODO: should print directly instead of creating a copy in
-	# $data
-	my $data = join("\n",
+	foreach my $chunk (
 		$self->_format_qf_version(),
 		$self->_format_create_time(),
 		$self->_format_last_processed(),
 		$self->_format_times_processed(),
 		$self->_format_priority(),
-# Not strictly necessary for delivery, but would be nice to have
+# TODO: Not strictly necessary for delivery, but would be nice to have
 #		$self->_format_inode_info(),
 		$self->_format_flag_bits(),
 		$self->_format_macros(),
 		$self->_format_sender_address(),
 		$self->_format_recipient_addresses(),
 		$self->_format_headers(),
-	);
-
-	if( ! $self->get_queue_fh->print( "$data\n" ) ) {
-		die q{Couldn't print to } . $self->get_queue_filename . q{: $!};
+	) {
+		if( ! $fh->print( $chunk, "\n" ) ) {
+			die q{Couldn't print to } . $self->get_queue_filename . ": $!";
+		}
 	}
 
 	# TODO: need real return code?
