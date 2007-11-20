@@ -126,7 +126,6 @@ END
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
 	$qf->set_queue_directory( $dir );
-	$qf->set_defaults();
 	$qf->set_timestamp(1195000000);
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 
@@ -159,7 +158,6 @@ END
 	my $qf = Sendmail::Queue::Qf->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 	$qf->set_queue_directory( $dir );
-	$qf->set_defaults();
 	$qf->set_timestamp(1195000000);
 	$qf->set_sender('dmo@dmo.ca');
 	$qf->set_helo('loser');

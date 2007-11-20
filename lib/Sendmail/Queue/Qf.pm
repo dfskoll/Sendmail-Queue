@@ -44,7 +44,6 @@ Sendmail::Queue::Qf - Represent a Sendmail qfXXXXXXXX (control) file
     # Creates a new qf file, locked.
     $qf->create_and_lock();
 
-    $qf->set_defaults();
     $qf->set_sender('me@example.com');
     $qf->add_recipient('you@example.org');
 
@@ -124,7 +123,7 @@ sub new
 	{
 		my ($template, $seq_number) = @_;
 
-		return sprintf $template, 
+		return sprintf $template,
 			$base_60_chars[ int($seq_number / 60) ] . $base_60_chars[ $seq_number % 60 ];
 	}
 }
@@ -182,26 +181,11 @@ sub create_and_lock
 	return 1;
 }
 
-=head2 set_defaults ( )
-
-Set default values for any unconfigured qf options.
-
-=cut
-
-# TODO: call automatically from constructor?
-sub set_defaults
-{
-	my ($self) = @_;
-
-	warn q{TODO: More defaults};
-}
-
-
 # _tz_diff and _format_rfc2822_date borrowed from Email::Date.  Why?
 # Because they depend on Date::Parse and Time::Piece, and I don't want
 # to add them as dependencies.
 # Similar functions exist in MIMEDefang as well
-sub _tz_diff 
+sub _tz_diff
 {
 	my ($time) = @_;
 
@@ -216,7 +200,7 @@ sub _tz_diff
 	return ($direc, $tz_hr, $tz_mi);
 }
 
-sub _format_rfc2822_date 
+sub _format_rfc2822_date
 {
 	my ($time) = @_;
 	$time = time unless defined $time;
@@ -520,7 +504,7 @@ sub _format_macros
 {
 	# TODO: we're hardcoding these here, but they really should be
 	# generated as needed
-	# TODO: we may also want to pass on other macros obtained 
+	# TODO: we may also want to pass on other macros obtained
 	# These are cargo-culted from a test message, and should be
 	# researched to determine correct values
 	# 	- $r may need to be SMTP or ESMTP

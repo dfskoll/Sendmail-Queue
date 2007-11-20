@@ -74,7 +74,6 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     $second_df->set_queue_id( $qf->get_queue_id );
     $second_df->hardlink_to( $df ); # Need better name
 
-    $qf->set_defaults();
     $qf->set_sender('me@example.com');
     $qf->add_recipient('you@example.org');
 
