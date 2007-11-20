@@ -26,6 +26,7 @@ __PACKAGE__->mk_accessors( qw(
 	local_hostname
 	protocol
 	received_header
+	priority
 ) );
 
 =head1 NAME
@@ -83,6 +84,7 @@ sub new
 		product_name => 'Sendmail::Queue',
 		local_hostname => 'localhost',
 		timestamp => time,
+		priority => 30000,
 	};
 
 	bless $self, $class;
@@ -536,8 +538,9 @@ sub _format_times_processed
 
 sub _format_priority
 {
-	# TODO: should be adjustable
-	return 'P30000';
+	my ($self) = @_;
+
+	return 'P' . $self->get_priority();
 }
 
 sub _format_inode_info
