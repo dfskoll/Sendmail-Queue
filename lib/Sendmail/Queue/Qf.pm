@@ -283,7 +283,8 @@ sub synthesize_received_header
 
 Return the full path name of this queue file.
 
-Will die if queue directory is unset.
+Will return undef if no queue ID exists, and die if queue directory is
+unset.
 
 =cut
 
@@ -293,6 +294,10 @@ sub get_queue_filename
 
 	if( ! $self->get_queue_directory ) {
 		die q{queue directory not set};
+	}
+
+	if( ! $self->get_queue_id ) {
+		return undef;
 	}
 
 	return File::Spec->catfile( $self->get_queue_directory(), 'qf' . $self->get_queue_id() );
@@ -326,6 +331,11 @@ sub write
 
 	if ( ! $self->get_queue_directory ) {
 		die q{write() requires a queue directory};
+	}
+
+	if ( ! $self->get_queue_fh
+	    || ! $self->get_queue_fh->opened ) {
+		die q{write() cannot write without an open filehandle};
 	}
 
 	# TODO: should print directly instead of creating a copy in
@@ -452,6 +462,52 @@ sub clone
 	}
 
 	return $clone;
+}
+
+=head2 unlink ( ) 
+
+Unlink the queue file.  Returns true (1) on success, false (undef) on
+failure.
+
+Unlinking the queue file will only succeed if:
+
+=over 4
+
+=item *
+
+we have a queue directory and queue ID configured for this object
+
+=item * 
+
+the queue file is open and locked
+
+=back
+
+Otherwise, we fail to delete.
+
+=cut
+
+sub unlink
+{
+	my ($self) = @_;
+
+	if( ! $self->get_queue_filename ) {
+		# No filename, can't unlink
+		return undef;
+	}
+
+	if( ! $self->get_queue_fh ) {
+		return undef;
+	}
+
+	# Only delete the queue file if we have it locked.
+	$self->get_queue_fh->close;
+	$self->set_queue_fh(undef);
+	if( 1 != unlink($self->get_queue_filename) ) {
+		return undef;
+	}
+
+	return 1;
 }
 
 

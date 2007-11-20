@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 6;
+use Test::More tests => 13;
 use Test::Exception;
 use File::Temp;
 use File::Slurp;
@@ -77,4 +77,23 @@ END
 	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Unlinking original causes no problems');
 
 
+}
+
+# unlink
+{
+	my $df = Sendmail::Queue::Df->new();
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	$df->set_queue_directory( $dir );
+
+	ok( ! $df->get_data_filename, 'Object has no filename');
+	ok( ! $df->unlink, 'Unlink fails when no filename');
+
+	$df->set_data('foo');
+	$df->set_queue_id( 'chewbacca' );
+	ok( $df->write, 'Created a file');
+	ok( -e $df->get_data_filename, 'File exists');
+	ok( $df->unlink, 'Unlink succeeds when file exists');
+	ok( ! -e $df->get_data_filename, 'File now deleted');
+
+	ok( ! $df->unlink, 'Unlink fails because file now does not exist');
 }

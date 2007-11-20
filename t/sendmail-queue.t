@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 20;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
@@ -188,4 +188,48 @@ EOM
 
 	is( unlink(<$dir/qf*>), 2, 'Unlinked two queue files');
 	is( unlink(<$dir/df*>), 2, 'Unlinked two data files');
+}
+
+# queue_message() fails, file gets unlinked
+{
+
+	my $dir = 't/tmp';
+
+	my $queue = Sendmail::Queue->new({
+		queue_directory => $dir,
+	});
+
+	my $data = <<EOM;
+From: foobar
+To: someone
+Date: Wed, 07 Nov 2007 14:54:33 -0500
+
+Test message
+-- 
+Dave
+EOM
+
+	chmod 0555, $dir;
+
+	dies_ok {
+	my $qid = $queue->queue_message({
+		sender => 'dmo@dmo.ca',
+		recipients => [
+			'dmo@roaringpenguin.com',
+			'dfs@roaringpenguin.com',
+		],
+		data => $data,
+		timestamp => 1234567890,
+	}); } 'queue_message() dies';
+
+	chmod 0755, $dir;
+
+	like( $@, qr{Error creating qf file t/tmp/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
+
+	my @files = <$dir/*qf>;
+
+	is( scalar @files, 0, 'No qf files');
+
+	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
+	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
 }

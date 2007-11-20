@@ -112,7 +112,8 @@ sub hardlink_to
 
 Return the full path name of this data file.
 
-Will die if queue directory is unset.
+Will return undef if no queue ID exists, and die if queue directory is
+unset.
 
 =cut
 
@@ -122,6 +123,10 @@ sub get_data_filename
 
 	if( ! $self->get_queue_directory ) {
 		die q{queue directory not set};
+	}
+
+	if( ! $self->get_queue_id ) {
+		return undef;
 	}
 
 	return File::Spec->catfile( $self->get_queue_directory(), 'df' . $self->get_queue_id() );
@@ -195,8 +200,33 @@ sub write
 	}
 
 	return 1;
-}
+} 
 
+=head2 unlink ( ) 
+
+Unlink the queue file.  Returns true (1) on success, false (undef) on
+failure.
+
+Unlinking the queue file will only succeed if we have a queue directory
+and queue ID configured for this object.  Otherwise, we fail to delete.
+
+=cut
+
+sub unlink
+{
+	my ($self) = @_;
+
+	if( ! $self->get_data_filename ) {
+		# No filename, can't unlink
+		return 0;
+	}
+
+	if( 1 != unlink($self->get_data_filename) ) {
+		return 0;
+	}
+
+	return 1;
+}
 
 1;
 __END__

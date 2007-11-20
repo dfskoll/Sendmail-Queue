@@ -249,7 +249,20 @@ sub queue_message
 	return $qf->get_queue_id;
 }
 
-# Returns success, or dies.
+=head2 enqueue ( $qf, $df )
+
+Enqueue a message, given a L<Sendmail::Queue::Qf> object and a
+L<Sendmail::Queue::Df> object.
+
+This method is mostly for internal use.  You should probably use
+C<queue_message()> or C<queue_multiple()> instead.
+
+Returns true if queuing was successful.  Otherwise, cleans up any qf
+and df data that may have been written to disk, and rethrows any
+exception that may have occurred.
+
+=cut
+
 sub enqueue
 {
 	my ($self, $qf, $df) = @_;
@@ -263,8 +276,8 @@ sub enqueue
 		chmod( 0664, $df->get_data_filename, $qf->get_queue_filename) or die qq{chmod fail: $!};
 	};
 	if( $@ ) { ## no critic
-#		$df->delete();
-#		$qf->delete();
+		$df->unlink();
+		$qf->unlink();
 
 		# Rethrow the exception after cleanup
 		die $@;
@@ -332,6 +345,7 @@ sub queue_multiple
 	my %results;
 
 	# Now, loop over all of the rest
+	# TODO: catch errors and delete partially-queued messages
 	foreach my $set_key ( keys %{ $args->{recipient_sets} }) {
 		my $cur_qf = $qf->clone();
 		$cur_qf->add_recipient( @{ $args->{recipient_sets}{$set_key} } );

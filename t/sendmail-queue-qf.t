@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 30;
+use Test::More tests => 39;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
@@ -185,4 +185,24 @@ END
 	cmp_deeply( $clone->get_recipients, [], 'clone has empty recipients');
 	is( $clone->get_queue_id, undef, 'clone has no queue id');
 	is( $clone->get_queue_fh, undef, 'clone has no queue fh');
+}
+
+# unlink
+{
+	my $qf = Sendmail::Queue::Qf->new();
+	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	$qf->set_queue_directory( $dir );
+
+	ok( ! $qf->get_queue_filename, 'Object has no filename');
+	ok( ! $qf->unlink, 'Unlink fails when no filename');
+
+	ok( $qf->create_and_lock, 'Created a file');
+	ok( -e $qf->get_queue_filename, 'File exists');
+	ok( $qf->unlink, 'Unlink succeeds when file exists');
+	ok( ! -e $qf->get_queue_filename, 'File now deleted');
+
+	ok( ! $qf->unlink, 'Unlink fails because file now does not exist');
+
+	dies_ok { $qf->write() } 'Write dies because queue file closed and deleted';
+	like($@, qr/write\(\) cannot write without an open filehandle/, '... with expected error');
 }
