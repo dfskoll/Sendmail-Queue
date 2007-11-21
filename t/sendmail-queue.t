@@ -6,8 +6,8 @@ use Test::Deep;
 use File::Temp;
 use File::Slurp;
 
-BEGIN { 
-	use_ok('Sendmail::Queue'); 
+BEGIN {
+	use_ok('Sendmail::Queue');
 }
 
 # Constructor
@@ -52,7 +52,7 @@ T1234567890
 K0
 N0
 P30000
-Fs
+F
 \$_localhost.localdomain \[127\.0\.0\.1\]
 \$rESMTP
 \${daemon_flags}
@@ -130,7 +130,7 @@ T1234567890
 K0
 N0
 P30000
-Fs
+F
 \$_localhost.localdomain \[127\.0\.0\.1\]
 \$rESMTP
 \${daemon_flags}
@@ -154,7 +154,7 @@ T1234567890
 K0
 N0
 P30000
-Fs
+F
 \$_localhost.localdomain \[127\.0\.0\.1\]
 \$rESMTP
 \${daemon_flags}

@@ -6,8 +6,8 @@ use Test::Deep;
 use File::Temp;
 use File::Slurp;
 
-BEGIN { 
-	use_ok('Sendmail::Queue::Qf'); 
+BEGIN {
+	use_ok('Sendmail::Queue::Qf');
 }
 
 # Constructor
@@ -60,12 +60,12 @@ BEGIN {
 	my $warn_count = 0;
 	{
 
-		local $SIG{__WARN__} = sub { 
-			if( $_[0] =~ /exists, incrementing sequence/ ) { 
+		local $SIG{__WARN__} = sub {
+			if( $_[0] =~ /exists, incrementing sequence/ ) {
 				$warn_count++;
 				return;
 			}
-			warn $_[0] 
+			warn $_[0];
 		};
 		ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	}
@@ -102,7 +102,7 @@ T1234567890
 K0
 N0
 P30000
-Fs
+F
 $_localhost.localdomain [127.0.0.1]
 $rESMTP
 ${daemon_flags}
