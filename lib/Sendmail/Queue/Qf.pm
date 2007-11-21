@@ -347,8 +347,6 @@ sub write
 		$self->_format_last_processed(),
 		$self->_format_times_processed(),
 		$self->_format_priority(),
-# TODO: Not strictly necessary for delivery, but would be nice to have
-#		$self->_format_inode_info(),
 		$self->_format_flag_bits(),
 		$self->_format_macros(),
 		$self->_format_sender_address(),
@@ -360,7 +358,6 @@ sub write
 		}
 	}
 
-	# TODO: need real return code?
 	return 1;
 }
 
@@ -542,13 +539,6 @@ sub _format_priority
 	my ($self) = @_;
 
 	return 'P' . $self->get_priority();
-}
-
-sub _format_inode_info
-{
-	# TODO: should be major/minor/inode, but we'll leave blank for
-	# now
-	return 'I';
 }
 
 sub _format_flag_bits
