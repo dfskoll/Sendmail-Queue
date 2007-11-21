@@ -82,7 +82,7 @@ BEGIN {
 	$qf->set_queue_directory( $dir );
 
 	$qf->set_timestamp ( 1234567890 );
-
+	$qf->set_protocol('ESMTP');
 	$qf->set_sender('dmo@dmo.ca');
 	$qf->add_recipient('dmo@roaringpenguin.com');
 
@@ -103,7 +103,6 @@ K0
 N0
 P30000
 F
-$_localhost.localdomain [127.0.0.1]
 $rESMTP
 ${daemon_flags}
 S<dmo@dmo.ca>

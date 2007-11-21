@@ -516,7 +516,8 @@ sub unlink
 
 sub _format_qf_version
 {
-	# TODO Bat Book only describes V6!
+	# Bat Book only describes V6, but we're assuming correctness
+	# with V8 based on inspection of V8 qf files.
 	return "V8";
 }
 
@@ -594,20 +595,23 @@ sub _format_flag_bits
 
 sub _format_macros
 {
-	# TODO: we're hardcoding these here, but they really should be
-	# generated as needed
-	# TODO: we may also want to pass on other macros obtained
-	# These are cargo-culted from a test message, and should be
-	# researched to determine correct values
-	# 	- $r may need to be SMTP or ESMTP
-	# 	- ${daemon_flags}EE <-- ???
-	# 	- ${daemon_flags}c u <-- ???
-	# 	- $_user@hostname <-- ???
-	return join("\n",
-		'$_localhost.localdomain [127.0.0.1]',
-		'$rESMTP',
-		'${daemon_flags}',
-	);
+	my ($self) = @_;
+
+	my @macros;
+
+	# TODO: we may also want to pass on other macros
+
+	# $r macro - protocol by which message was received
+	my $protocol = $self->get_protocol() || '';
+	if( $protocol =~ /^e?smtp$/i ) {
+		push @macros, '$r' . uc($protocol);
+	}
+
+	# ${daemon_flags} macro - shouldn't need any of these, so set a
+	# blank one.
+	push @macros, '${daemon_flags}';
+
+	return join("\n", @macros);
 }
 
 sub _format_sender_address
