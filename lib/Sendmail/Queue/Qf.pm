@@ -9,6 +9,13 @@ use IO::File;
 use Time::Local ();
 use Fcntl qw( :flock );
 
+# TODO: testcases:
+#  - header lines too long
+#  - 8-bit body handling
+#  - total size of headers > 32768 bytes
+#  - weird/missing sender and recipient addresses
+#  - streaming multiple copies as fast as possible
+
 use base qw(Class::Accessor::Fast);
 __PACKAGE__->follow_best_practice;
 __PACKAGE__->mk_accessors( qw(
@@ -625,11 +632,17 @@ sub _format_headers
 	# exists.
 	foreach my $line ( split(/\n/, $self->get_received_header || ''), split(/\n/, $self->get_headers) ) {
 		# TODO: proper wrapping of header lines at max length
+		# Sendmail will happily deal with over-length lines in
+		# a queue file when transmitting, by breaking each line
+		# after 998 characters (to allow for \r\n under the
+		# 1000 character RFC limit) and splitting into a new
+		# line.  We may wish to do this ourselves in a
+		# nicer way, perhaps by adding a continuation \n\t at
+		# the first whitespace before 998 characters.
 
-		# TODO: proper escaping of header data (see Bat Book,
-		# ch 25).  We need to be sure that we're not allowing
-		# anything that would allow an inbound header to
-		# trigger some Sendmail special-case.
+		# It doesn't appear that we need to escape any possible
+		# ${whatever} macro expansion in H?? lines, based on
+		# tests using 8.13.8 queue files.
 
 		# We do not want any delivery-agent flags between ??.
 		# Even Return-Path, which ordinarily has ?P?, we shall
@@ -658,10 +671,15 @@ sub _format_recipient_addresses
 	my @out;
 
 	foreach my $recip ( @{$recips} ) {
-		# TODO: Sanitize $recip before using:
-		# 	- make safe (if necessary... does sendmail
-		# 	  croak on anything?)
-		# 	- remove extra < >
+
+		# Sanitize $recip a little before using it.
+		# First, remove any leading/trailing whitespace, and
+		# any < > that might be present already
+		#
+		# TODO: do we need to do any other validation or
+		# cleaning of address here?
+		$recip =~ s/^[<\s]+//;
+		$recip =~ s/[>\s]+$//;
 
 		push @out, "C:<$recip>";
 		push @out, "rRFC822; $recip";
