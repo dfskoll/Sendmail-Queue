@@ -418,6 +418,7 @@ sub sync
 	my $handle = IO::Handle->new();
 	$handle->fdopen(fileno(DIR_FH), "w") or die qq{Couldn't fdopen the directory handle: $!};
 	$handle->sync or die qq{Couldn't sync: $!};
+	$handle->close;
 
 	close(DIR_FH);
 
