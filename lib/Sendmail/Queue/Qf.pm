@@ -117,9 +117,9 @@ sub new
 		my $tmpl = join('', @base_60_chars[
 			$year % 60,
 			$mon,
-			$mday,  # TODO: ($mday - 1) to keep it zero-based?
-			$hour,  
-			$min,   
+			$mday,
+			$hour,
+			$min,
 			$sec],
 			'%2.2s',
 			sprintf('%06d', $$)
