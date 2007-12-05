@@ -83,15 +83,13 @@ sub new
 	my ($class, $args) = @_;
 
 	my $self = {
-		queue_directory => $args->{queue_directory},
-		queue_id => undef,
-		sender => undef,
 		headers => '',
 		recipients => [],
 		product_name => 'Sendmail::Queue',
 		local_hostname => 'localhost',
 		timestamp => time,
 		priority => 30000,
+		%{ $args || {} },
 	};
 
 	bless $self, $class;
