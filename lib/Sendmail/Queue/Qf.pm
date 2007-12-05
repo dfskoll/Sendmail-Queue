@@ -527,12 +527,14 @@ sub unlink
 		return undef;
 	}
 
-	# Only delete the queue file if we have it locked.
-	$self->get_queue_fh->close;
-	$self->set_queue_fh(undef);
+	# Only delete the queue file if we have it locked.  Thus, we
+	# must call unlink() before close(), or we're no longer holding
+	# the lock.
 	if( 1 != unlink($self->get_queue_filename) ) {
 		return undef;
 	}
+	$self->get_queue_fh->close;
+	$self->set_queue_fh(undef);
 
 	return 1;
 }
