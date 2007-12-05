@@ -165,7 +165,7 @@ sub write
 	}
 
 	if( ! $self->get_queue_id() ) {
-		$self->generate_queue_id();
+		die q{no queue id!}
 	}
 
 	my $filepath = $self->get_data_filename();
@@ -253,7 +253,6 @@ Patches are welcome.
 
 =head1 AUTHOR
 
-David F. Skoll, C<< <support at roaringpenguin.com> >>
 Dave O'Neill, C<< <support at roaringpenguin.com> >>
 
 =head1 LICENCE AND COPYRIGHT
