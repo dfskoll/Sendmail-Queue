@@ -411,11 +411,11 @@ sub sync
 	}
 
 	if( ! $fh->flush ) {
-		carp q{Couldn't flush filehandle!};
+		croak q{Couldn't flush filehandle!};
 	}
 
 	if( ! $fh->sync ) {
-		carp q{Couldn't sync filehandle!};
+		croak q{Couldn't sync filehandle!};
 	}
 
 	return 1;
