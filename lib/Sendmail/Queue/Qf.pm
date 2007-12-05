@@ -188,8 +188,6 @@ sub create_and_lock
 		# 17.  Cross-platform issues?
 		} elsif( $! == 17 ) {  # 17 == EEXIST
 			# Try the next one
-			# TODO: don't carp() in production
-			carp "$path exists, incrementing sequence";
 			$seq = ($seq + 1) % 3600;
 		} else {
 			die qq{Error creating qf file $path: $!};

@@ -1,12 +1,20 @@
 use strict;
 use warnings;
-use Test::More tests => 39;
+use Test::More tests => 38;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
 use File::Slurp;
 
 BEGIN {
+
+	# fake rand() to always return 0 for testing purposes.
+	# Because rand() is a builtin, it needs to be overridden at
+	# BEGIN time, before Sendmail::Queue::Qf is read in.
+	*Sendmail::Queue::Qf::rand = sub {
+		0;
+	};
+
 	use_ok('Sendmail::Queue::Qf');
 }
 
@@ -29,16 +37,21 @@ BEGIN {
 
 	my $qf = Sendmail::Queue::Qf->new({
 		queue_directory => $dir,
+		timestamp => 1234567890,
 	});
 
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
-	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
+
+	my $pid = sprintf("%06d", $$);
+	is( $qf->get_queue_id(), "n1DNVU00$pid", 'Queue ID is correct and has sequence number of 0');
 	ok( -r "$dir/qf" . $qf->get_queue_id, 'Queue file exists');
 }
 
 # Generation of queue ID after calling set_queue_directory
 {
-	my $qf = Sendmail::Queue::Qf->new();
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp => 1234567890,
+	});
 
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
@@ -57,24 +70,10 @@ BEGIN {
 		return "$dir/new_file";
 	};
 
-	# TODO: override rand() so that it always returns a known
-	# number and make sure the answer we get is 3 more than the
-	# known number.  Removes need for __WARN__
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 
-	my $warn_count = 0;
-	{
-
-		local $SIG{__WARN__} = sub {
-			if( $_[0] =~ /exists, incrementing sequence/ ) {
-				$warn_count++;
-				return;
-			}
-			warn $_[0];
-		};
-		ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
-	}
-	is( $warn_count, 3, 'Got 3 warnings about duplicate filename');
-	like( $qf->get_queue_id(), qr/^[0-9A-Za-x]{8}[0-9]{6}$/, 'Queue ID looks reasonably sane');
+	my $pid = sprintf("%06d", $$);
+	is( $qf->get_queue_id(), "n1DNVU03$pid", 'Queue ID is correct and has sequence number of 3');
 }
 
 
