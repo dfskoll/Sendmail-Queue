@@ -377,6 +377,7 @@ sub write
 		$self->_format_sender_address(),
 		$self->_format_recipient_addresses(),
 		$self->_format_headers(),
+		$self->_format_end_of_qf(),
 	) {
 		if( ! $fh->print( $chunk, "\n" ) ) {
 			die q{Couldn't print to } . $self->get_queue_filename . ": $!";
@@ -673,15 +674,29 @@ sub _format_headers
 		# Even Return-Path, which ordinarily has ?P?, we shall
 		# ignore flags for, as we want to pass on every header
 		# that we originally received.
-		# Handle already-wrapped lines properly
-		if( $line =~ /^\t/ ) {
+		if( $line =~ /^\s/ ) {
+			# Handle already-wrapped lines properly, by
+			# appending them as-is.  Wrapped lines can
+			# begin with any whitespace, but it's most
+			# commonly a tab.
 			$out .= "$line\n";
 		} else {
 			$out .=  "H??$line\n";
 		}
 	}
-	$out .= '.';
+
+	# Don't want a trailing newline
+	chomp $out;
+
 	return $out;
+}
+
+sub _format_end_of_qf
+{
+	my ($self) = @_;
+
+	# Dot signifies end of queue file.  
+	return '.';
 }
 
 sub _format_recipient_addresses
