@@ -157,7 +157,7 @@ sub write
 	my ($self) = @_;
 
 	if ( $self->{hardlinked} ) {
-		return 0;
+		return undef;
 	}
 
 	if ( ! $self->get_queue_directory ) {
