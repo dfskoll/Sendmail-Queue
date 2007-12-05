@@ -8,6 +8,7 @@ use File::Spec;
 use IO::File;
 use Time::Local ();
 use Fcntl qw( :flock );
+use Errno qw( EEXIST );
 
 # TODO: testcases:
 #  - header lines too long
@@ -184,9 +185,7 @@ sub create_and_lock
 			$self->set_queue_id( $qid );
 			$self->set_queue_fh( $fh  );
 			last;
-		# TODO: look for a symbolic constant instead of using
-		# 17.  Cross-platform issues?
-		} elsif( $! == 17 ) {  # 17 == EEXIST
+		} elsif( $! == EEXIST ) {
 			# Try the next one
 			$seq = ($seq + 1) % 3600;
 		} else {
