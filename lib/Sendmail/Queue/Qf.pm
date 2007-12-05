@@ -60,7 +60,7 @@ Sendmail::Queue::Qf - Represent a Sendmail qfXXXXXXXX (control) file
     # Add a received header using the information already provided
     $qf->synthesize_received_header();
 
-    $qf->write( '/path/to/queue');
+    $qf->write( );
 
     $qf->sync();
 
@@ -117,9 +117,9 @@ sub new
 		my $tmpl = join('', @base_60_chars[
 			$year % 60,
 			$mon,
-			$mday,
-			$hour,
-			$min,
+			$mday,  # TODO: ($mday - 1) to keep it zero-based?
+			$hour,  
+			$min,   
 			$sec],
 			'%2.2s',
 			sprintf('%06d', $$)
@@ -165,6 +165,12 @@ sub create_and_lock
 		my $qid  = _fill_template($tmpl, $seq);
 		my $path = File::Spec->catfile( $self->{queue_directory}, "qf$qid" );
 
+		# TODO: make sure a queue run won't delete it if empty
+		# and unlocked.
+		# TODO: also, if queue runner locks before reading, we
+		# could fail our lock.  More testing!
+		# Also, document what Sendmail does in that case, so we
+		# don't forget it in 3 months...
 		my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
 		if( $fh ) {
 			if( ! flock $fh, LOCK_EX | LOCK_NB ) {
@@ -173,8 +179,11 @@ sub create_and_lock
 			$self->set_queue_id( $qid );
 			$self->set_queue_fh( $fh  );
 			last;
+		# TODO: look for a symbolic constant instead of using
+		# 17.  Cross-platform issues?
 		} elsif( $! == 17 ) {  # 17 == EEXIST
 			# Try the next one
+			# TODO: don't carp() in production
 			carp "$path exists, incrementing sequence";
 			$seq = ($seq + 1) % 3600;
 		} else {
@@ -240,10 +249,15 @@ sub synthesize_received_header
 
 	my $header = 'Received: ';
 
+	# TODO: should escape our data for anything that could cause a
+	# problem in a () comment.  Weird characters outside a
+	# comment... ??
+
 	# Add relay address, if we have one
 	if( $self->get_relay_address ) {
 		$header .= 'from';
 		if( $self->get_helo ) {
+			# TODO: helo needs cleansing, blow away non-ASCII-printable?
 			$header .= ' ' . $self->get_helo;
 		}
 		my $relay_info = "[" . $self->get_relay_address() . "]";
@@ -261,6 +275,7 @@ sub synthesize_received_header
 		$header .= "\n\tby " . $self->get_local_hostname();
 		if( $protocol =~ /e?smtp/i ) {
 			$header .= ' (envelope-sender '
+				# TODO: clean envelope sender?
 			        . $self->get_sender()
 			        . ')';
 		}
@@ -338,6 +353,7 @@ sub write
 {
 	my ($self) = @_;
 
+	# TODO: this is unnecessary.
 	if ( ! $self->get_queue_directory ) {
 		die q{write() requires a queue directory};
 	}
@@ -381,6 +397,8 @@ sub sync
 
 	my $fh = $self->get_queue_fh;
 
+	# TODO: non-filehandle should be impossible.  Let it die
+	# miserably when $fh->opened fails
 	if( ! ($fh && blessed $fh && $fh->isa('IO::Handle')) ) {
 		return undef;
 	}
@@ -407,6 +425,7 @@ or wasn't open, and dies if closing the filehandle fails.
 
 =cut
 
+# TODO: toss exceptions for everything?
 sub close
 {
 	my ($self) = @_;
@@ -522,6 +541,9 @@ sub _format_qf_version
 {
 	# Bat Book only describes V6, but we're assuming correctness
 	# with V8 based on inspection of V8 qf files.
+	# TODO: should do V6 for compatibility with Sendmail 8.12
+	# TODO: at construct-time we should set a qf_version instead of
+	# hardcoding it.
 	return "V8";
 }
 
@@ -533,6 +555,7 @@ sub _format_create_time
 
 sub _format_last_processed
 {
+	# Never processed, so zero.
 	return 'K0';
 }
 
@@ -668,6 +691,8 @@ sub _format_recipient_addresses
 		return;
 	}
 
+	# TODO: consistency - some methods append to string, others
+	# push to array and join.  Use one or the other.
 	my @out;
 
 	foreach my $recip ( @{$recips} ) {
@@ -678,6 +703,10 @@ sub _format_recipient_addresses
 		#
 		# TODO: do we need to do any other validation or
 		# cleaning of address here?
+		# TODO: why here, and not for sender?  Should probably
+		# separate this out to a canonicalize() method and do
+		# it for both.  Do it in add_recipient and set_sender
+		# instead.
 		$recip =~ s/^[<\s]+//;
 		$recip =~ s/[>\s]+$//;
 
@@ -733,7 +762,6 @@ Patches are welcome.
 
 =head1 AUTHOR
 
-David F. Skoll, C<< <support at roaringpenguin.com> >>
 Dave O'Neill, C<< <support at roaringpenguin.com> >>
 
 =head1 LICENCE AND COPYRIGHT

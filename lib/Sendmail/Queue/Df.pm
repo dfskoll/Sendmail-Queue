@@ -146,7 +146,7 @@ sub set_data_from
 	$self->set_data( do { local $/; <$data_fh> } );
 }
 
-=head2 write ( ) 
+=head2 write ( )
 
 Write data to df file, if necessary.
 
@@ -179,6 +179,7 @@ sub write
 		die qq{File $filepath could not be created: $!};
 	}
 
+	# TODO: do we actually need to lock the df file?
 	if( ! flock $fh, LOCK_EX | LOCK_NB ) {
 		die qq{Couldn't lock $filepath: $!};
 	}
@@ -200,9 +201,9 @@ sub write
 	}
 
 	return 1;
-} 
+}
 
-=head2 unlink ( ) 
+=head2 unlink ( )
 
 Unlink the queue file.  Returns true (1) on success, false (undef) on
 failure.

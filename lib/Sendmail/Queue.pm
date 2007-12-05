@@ -32,7 +32,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
 	recipients => [
 		'first@example.net',
 		'second@example.org',
-	]
+	],
 	data       => $string_or_object,
     });
 
@@ -47,6 +47,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
 			'second@example.org',
 		],
 		'set two' => [
+			'third@example.org',
 		],
 	},
 	data           => $string_or_object,
@@ -156,7 +157,11 @@ Array ref containing one or more recipients for this message.
 
 =item data
 
-Scalar containing message headers and body, in mbox format (separated by \n\n).
+Scalar containing message headers and body, in RFC-2822 format (ASCII
+text, headers separated from body by \n\n).
+
+Data should use local line-ending conventions (as used by Sendmail) and
+not the \r\n used on the wire for SMTP.
 
 =back
 
@@ -201,6 +206,9 @@ A UNIX seconds-since-epoch timestamp.  If omitted, defaults to current time.
 =back
 
 On error, this method may die() with a number of different runtime errors.
+
+TODO: document the possible errors
+TODO: use exceptions??
 
 =cut
 
@@ -273,6 +281,9 @@ sub enqueue
 		$qf->sync();
 		$qf->close();
 
+		# TODO Is this chmod necessary?
+		# TODO: check umask earlier and/or push/pop the umask
+		# before opening the file
 		chmod( 0664, $df->get_data_filename, $qf->get_queue_filename) or die qq{chmod fail: $!};
 	};
 	if( $@ ) { ## no critic
@@ -315,6 +326,7 @@ sub queue_multiple
 {
 	my ($self, $args) = @_;
 
+	# TODO: common with queue_message - pull out?
 	foreach my $argname qw( sender recipient_sets data ) {
 		die qq{$argname argument must be specified} unless exists $args->{$argname}
 
@@ -397,7 +409,8 @@ sub sync
 	#     IO::Handle->sync
 	# so, we have to sysopen to a filehandle glob, and then fdopen
 	# the fileno we get from that glob.
-
+	# TODO: this needs testing on solaris and bsd
+	# TODO: this needs testing on other versions of Perl (5.10?)
 	my $directory = $self->{_df_directory};
 
 	sysopen(DIR_FH, $directory, O_RDONLY) or die qq{Couldn't sysopen $directory: $!};
@@ -421,7 +434,11 @@ __END__
 
 L<Carp>
 
+# TODO list other core perl modules
+
 =head2 Other Modules
+
+# TODO we shouldn't have non-core dependencies!  Check!
 
 =head1 INCOMPATIBILITIES
 
@@ -429,13 +446,14 @@ There are no known incompatibilities with this module.
 
 =head1 BUGS AND LIMITATIONS
 
-There are no known bugs in this module.
+There are no known bugs in this module.  However, it messes with
+undocumented bits of Sendmail.  YMMV.
+
 Please report problems to the author.
 Patches are welcome.
 
 =head1 AUTHOR
 
-David F. Skoll, C<< <support at roaringpenguin.com> >>
 Dave O'Neill, C<< <support at roaringpenguin.com> >>
 
 =head1 LICENCE AND COPYRIGHT
