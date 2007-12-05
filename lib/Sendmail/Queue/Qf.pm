@@ -301,6 +301,8 @@ sub synthesize_received_header
 	$header .= '; ' . _format_rfc2822_date( $self->get_timestamp() );
 
 	$self->{received_header} = $header;
+
+	return $header;
 }
 
 =head2 get_queue_filename
