@@ -357,11 +357,6 @@ sub write
 {
 	my ($self) = @_;
 
-	# TODO: this is unnecessary.
-	if ( ! $self->get_queue_directory ) {
-		die q{write() requires a queue directory};
-	}
-
 	my $fh = $self->get_queue_fh;
 
 	if ( ! $fh || ! $fh->opened ) {
@@ -401,12 +396,6 @@ sub sync
 	my ($self) = @_;
 
 	my $fh = $self->get_queue_fh;
-
-	# TODO: non-filehandle should be impossible.  Let it die
-	# miserably when $fh->opened fails
-	if( ! ($fh && blessed $fh && $fh->isa('IO::Handle')) ) {
-		return undef;
-	}
 
 	if( ! $fh->opened ) {
 		return undef;
