@@ -183,6 +183,8 @@ EOM
 	is( File::Slurp::slurp( "$dir/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
 	is( File::Slurp::slurp( "$dir/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
 
+	# TODO: stat each of the files and make sure the inode num is the same
+
 	is( (stat("$dir/df$qids->{stream_one}"))[3], 2, 'nlink is 2 on df file');
 
 	is( unlink(<$dir/qf*>), 2, 'Unlinked two queue files');

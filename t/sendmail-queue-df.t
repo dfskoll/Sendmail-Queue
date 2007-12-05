@@ -68,6 +68,8 @@ END
 
 	$df->hardlink_to( $file );
 
+	# TODO: stat both files and check the inode
+
 	$df->write();
 
 	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Linked to expected data');

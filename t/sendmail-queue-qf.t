@@ -57,6 +57,10 @@ BEGIN {
 		return "$dir/new_file";
 	};
 
+	# TODO: override rand() so that it always returns a known
+	# number and make sure the answer we get is 3 more than the
+	# known number.  Removes need for __WARN__
+
 	my $warn_count = 0;
 	{
 
