@@ -280,11 +280,6 @@ sub enqueue
 		$qf->write();
 		$qf->sync();
 		$qf->close();
-
-		# TODO Is this chmod necessary?
-		# TODO: check umask earlier and/or push/pop the umask
-		# before opening the file
-		chmod( 0664, $df->get_data_filename, $qf->get_queue_filename) or die qq{chmod fail: $!};
 	};
 	if( $@ ) { ## no critic
 		$df->unlink();

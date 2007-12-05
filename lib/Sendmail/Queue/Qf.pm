@@ -176,7 +176,9 @@ sub create_and_lock
 		# could fail our lock.  More testing!
 		# Also, document what Sendmail does in that case, so we
 		# don't forget it in 3 months...
+		my $old_umask = umask(002);
 		my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
+		umask($old_umask);
 		if( $fh ) {
 			if( ! flock $fh, LOCK_EX | LOCK_NB ) {
 				die qq{Couldn't lock $path: $!};

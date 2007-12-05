@@ -174,7 +174,9 @@ sub write
 		die qq{File $filepath already exists; write() doesn't know how to overwrite yet};
 	}
 
-	my $fh = IO::File->new( $filepath, O_WRONLY|O_CREAT );
+	my $old_umask = umask(002);
+	my $fh = IO::File->new( $filepath, O_WRONLY|O_CREAT|O_EXCL );
+	umask($old_umask);
 	if( ! $fh ) {
 		die qq{File $filepath could not be created: $!};
 	}
