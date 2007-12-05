@@ -145,6 +145,11 @@ file with that name.
 See Bat Book 3rd edition, section 11.2.1 for information on how the
 queue file name is generated.
 
+Note that we create the qf file directly, rather than creating an
+intermediate tf file and renaming aftewards.  This is all good and well
+for creating /new/ qf files -- sendmail does it that way as well -- but
+if we ever want to rewrite one, it's not safe.
+
 =cut
 
 sub create_and_lock
