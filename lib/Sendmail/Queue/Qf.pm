@@ -35,6 +35,7 @@ __PACKAGE__->mk_accessors( qw(
 	protocol
 	received_header
 	priority
+	qf_version
 ) );
 
 =head1 NAME
@@ -84,12 +85,15 @@ sub new
 	my ($class, $args) = @_;
 
 	my $self = {
-		headers => '',
-		recipients => [],
-		product_name => 'Sendmail::Queue',
+		headers        => '',
+		recipients     => [],
+		product_name   => 'Sendmail::Queue',
 		local_hostname => 'localhost',
-		timestamp => time,
-		priority => 30000,
+		timestamp      => time,
+		priority       => 30000,
+
+		# TODO: should do V6 for compatibility with Sendmail 8.12
+		qf_version     => '8',
 		%{ $args || {} },
 	};
 
@@ -535,12 +539,8 @@ sub unlink
 
 sub _format_qf_version
 {
-	# Bat Book only describes V6, but we're assuming correctness
-	# with V8 based on inspection of V8 qf files.
-	# TODO: should do V6 for compatibility with Sendmail 8.12
-	# TODO: at construct-time we should set a qf_version instead of
-	# hardcoding it.
-	return "V8";
+	my ($self) = @_;
+	return 'V' . $self->get_qf_version();
 }
 
 sub _format_create_time
