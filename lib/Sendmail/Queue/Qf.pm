@@ -92,10 +92,10 @@ sub new
 		timestamp      => time,
 		priority       => 30000,
 
-		# TODO: should do V6 for compatibility with Sendmail 8.12
-		qf_version     => '8',
-		%{ $args || {} },
-	};
+		# This code generates V6-compatible qf files to work
+		# with Sendmail 8.12.
+		qf_version     => '6',
+		%{ $args || {} }, };
 
 	bless $self, $class;
 

@@ -48,7 +48,7 @@ EOM
 		protocol => 'ESMTP',
 	});
 
-	my $qf_regex = qr/^V8
+	my $qf_regex = qr/^V6
 T1234567890
 K0
 N0
@@ -126,7 +126,7 @@ EOM
 
 	cmp_deeply( [ keys %$qids ], bag( qw(stream_one stream_two) ), 'Got a qid for all sets');
 
-	my $qf_one_regex = qr/^V8
+	my $qf_one_regex = qr/^V6
 T1234567890
 K0
 N0
@@ -149,7 +149,7 @@ H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
 .
 $/;
 
-	my $qf_two_regex = qr/^V8
+	my $qf_two_regex = qr/^V6
 T1234567890
 K0
 N0

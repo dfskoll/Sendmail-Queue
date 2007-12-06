@@ -100,7 +100,7 @@ BEGIN {
 	ok( $qf->close, 'close() succeeded' );
 
 	my $expected = <<'END';
-V8
+V6
 T1234567890
 K0
 N0
