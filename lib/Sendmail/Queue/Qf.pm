@@ -279,7 +279,7 @@ sub synthesize_received_header
 
 	if( $self->get_local_hostname() ) {
 		$header .= "\n\tby " . $self->get_local_hostname();
-		if( $protocol =~ /e?smtp/i ) {
+		if( $protocol =~ /e?smtp/i && $self->get_sender() ) {
 			$header .= ' (envelope-sender '
 				# TODO: clean envelope sender?
 			        . $self->get_sender()
@@ -635,7 +635,7 @@ sub _format_sender_address
 {
 	my ($self) = @_;
 
-	if( ! $self->get_sender() ) {
+	if( ! defined $self->get_sender() ) {
 		die q{No sender address!};
 	}
 	return 'S<' . $self->get_sender() . '>';
