@@ -463,6 +463,7 @@ Return a clone of this Sendmail::Queue::Qf object, containing everything EXCEPT:
 
 =cut
 my %skip_for_clone = (
+	sender => 1,
 	received_header => 1,
 	recipients => 1,
 	queue_id   => 1,

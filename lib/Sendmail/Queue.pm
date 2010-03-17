@@ -303,14 +303,21 @@ queue ID as the value.
 
 
     my %results = $q->queue_multiple({
-	sender         => 'user@example.com',
-	recipient_sets => {
-		'set one' => [
-			'first@example.net',
-			'second@example.org',
-		],
-		'set two' => [
-		],
+	envelopes => {
+		'envelope one' => {
+			sender         => 'user@example.com',
+			recipients => [
+				'first@example.net',
+				'second@example.org',
+			],
+		}
+		'envelope two' => {
+			sender         => 'user@example.com',
+			recipients => [
+				'third@example.net',
+				'fourth@example.org',
+			],
+		}
 	},
 	data           => $string_or_object,
     });
@@ -322,7 +329,7 @@ sub queue_multiple
 	my ($self, $args) = @_;
 
 	# TODO: common with queue_message - pull out?
-	foreach my $argname qw( sender recipient_sets data ) {
+	foreach my $argname qw( envelopes data ) {
 		die qq{$argname argument must be specified} unless exists $args->{$argname}
 
 	}
@@ -344,7 +351,6 @@ sub queue_multiple
 	}
 
 	# Prepare a generic queue file
-	$qf->set_sender( $args->{sender} );
 	$qf->set_headers( $headers );
 
 	my ($first_qf, $first_df);
@@ -353,9 +359,11 @@ sub queue_multiple
 
 	# Now, loop over all of the rest
 	# TODO: catch errors and delete partially-queued messages
-	foreach my $set_key ( keys %{ $args->{recipient_sets} }) {
+	# TODO: what if one envelope set errors out?  Do we bail on all?  Probably.
+	while( my($env_name, $env_data) = each %{ $args->{envelopes} } ) {
 		my $cur_qf = $qf->clone();
-		$cur_qf->add_recipient( @{ $args->{recipient_sets}{$set_key} } );
+		$cur_qf->set_sender( $env_data->{sender} );
+		$cur_qf->add_recipient( @{ $env_data->{recipients} } );
 		$cur_qf->create_and_lock();
 		$cur_qf->synthesize_received_header();
 		$cur_qf->write();
@@ -368,6 +376,7 @@ sub queue_multiple
 			# If this is the first one, create and write
 			# the df file, and leave the qf open and
 			# locked.
+			# TODO: don't we need to keep _all_ the qf's locked?
 			$first_qf = $cur_qf;
 			$first_df = $cur_df;
 			$first_df->set_data( $body );
@@ -378,7 +387,7 @@ sub queue_multiple
 			$cur_qf->close();
 		}
 
-		$results{ $set_key } = $cur_qf->get_queue_id;
+		$results{ $env_name } = $cur_qf->get_queue_id;
 	}
 
 	# Close the first queue file to release the lock

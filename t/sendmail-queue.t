@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 20;
+use Test::More tests => 21;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
@@ -107,16 +107,21 @@ EOM
 	my $qids;
 	lives_ok {
 		$qids = $queue->queue_multiple({
-			sender => 'dmo@dmo.ca',
-			recipient_sets => {
-				stream_one => [
+			envelopes => {
+				stream_one => {
+					sender => 'dmo@dmo.ca',
+					recipients => [
 					'dmo@roaringpenguin.com',
 					'dfs@roaringpenguin.com',
-				],
-				stream_two => [
-					'foo@roaringpenguin.com',
-					'bar@roaringpenguin.com',
-				],
+					],
+				},
+				stream_two => {
+					sender => 'dmo@dmo.ca',
+					recipients => [
+						'foo@roaringpenguin.com',
+						'bar@roaringpenguin.com',
+					],
+				},
 			},
 			data => $data,
 			timestamp => 1234567890,
@@ -177,6 +182,8 @@ Test message
 -- 
 Dave
 EOM
+
+	isnt( $qids->{stream_one}, $qids->{stream_two}, 'Got two different queue IDs');
 
 	like( File::Slurp::slurp( "$dir/qf$qids->{stream_one}" ), $qf_one_regex, 'Wrote expected qf data');
 	like( File::Slurp::slurp( "$dir/qf$qids->{stream_two}" ), $qf_two_regex, 'Wrote expected qf data');
