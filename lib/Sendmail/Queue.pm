@@ -271,6 +271,31 @@ exception that may have occurred.
 
 =cut
 
+=for internal doc
+
+Here are the file ops (from inotify) on a /usr/sbin/sendmail enqueuing:
+
+/var/spool/mqueue-client/ CREATE dfo2JEQb7J002161
+/var/spool/mqueue-client/ OPEN dfo2JEQb7J002161
+/var/spool/mqueue-client/ MODIFY dfo2JEQb7J002161
+/var/spool/mqueue-client/ CLOSE_WRITE,CLOSE dfo2JEQb7J002161
+/var/spool/mqueue-client/ OPEN dfo2JEQb7J002161
+/var/spool/mqueue-client/ CREATE qfo2JEQb7J002161
+/var/spool/mqueue-client/ OPEN qfo2JEQb7J002161
+/var/spool/mqueue-client/ MODIFY qfo2JEQb7J002161
+/var/spool/mqueue-client/ CREATE tfo2JEQb7J002161
+/var/spool/mqueue-client/ OPEN tfo2JEQb7J002161
+/var/spool/mqueue-client/ MODIFY tfo2JEQb7J002161
+/var/spool/mqueue-client/ MOVED_FROM tfo2JEQb7J002161
+/var/spool/mqueue-client/ MOVED_TO qfo2JEQb7J002161
+/var/spool/mqueue-client/ OPEN,ISDIR 
+/var/spool/mqueue-client/ CLOSE_NOWRITE,CLOSE,ISDIR 
+/var/spool/mqueue-client/ CLOSE_WRITE,CLOSE qfo2JEQb7J002161
+/var/spool/mqueue-client/ CLOSE_NOWRITE,CLOSE dfo2JEQb7J002161
+
+
+=cut
+
 sub enqueue
 {
 	my ($self, $qf, $df) = @_;
