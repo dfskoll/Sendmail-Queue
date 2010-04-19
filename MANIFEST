@@ -1,11 +1,16 @@
+bin/sendmail
 Build.PL
 Changes
-MANIFEST
-META.yml # Will be created by "make dist"
-Makefile.PL
-README
 lib/Sendmail/Queue.pm
+lib/Sendmail/Queue/Df.pm
+lib/Sendmail/Queue/Qf.pm
+Makefile.PL
+MANIFEST
+META.yml			# Will be created by "make dist"
+README
 t/00-load.t
-t/boilerplate.t
 t/pod-coverage.t
 t/pod.t
+t/sendmail-queue-df.t
+t/sendmail-queue-qf.t
+t/sendmail-queue.t
