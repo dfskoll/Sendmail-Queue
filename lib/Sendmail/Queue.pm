@@ -378,7 +378,8 @@ sub queue_multiple
 	# Prepare a generic queue file
 	$qf->set_headers( $headers );
 
-	my ($first_qf, $first_df);
+	my $first_df;
+	my @locked_qfs = ();
 
 	my %results;
 
@@ -397,26 +398,23 @@ sub queue_multiple
 		my $cur_df = Sendmail::Queue::Df->new();
 		$cur_df->set_queue_directory($self->{_df_directory});
 		$cur_df->set_queue_id( $cur_qf->get_queue_id );
-		if( ! $first_qf ) {
+		if( ! $first_df ) {
 			# If this is the first one, create and write
-			# the df file, and leave the qf open and
-			# locked.
-			# TODO: don't we need to keep _all_ the qf's locked?
-			$first_qf = $cur_qf;
+			# the df file
 			$first_df = $cur_df;
 			$first_df->set_data( $body );
 			$first_df->write();
 		} else {
-			# Otherwise
+			# Otherwise, link to the first df
 			$cur_df->hardlink_to( $first_df->get_data_filename() );
-			$cur_qf->close();
 		}
+		push @locked_qfs, $cur_qf;
 
 		$results{ $env_name } = $cur_qf->get_queue_id;
 	}
 
-	# Close the first queue file to release the lock
-	$first_qf->close();
+	# Close the queue files to release the locks
+	$_->close() for (@locked_qfs);
 
 	$self->sync();
 
