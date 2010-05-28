@@ -10,6 +10,8 @@ use Time::Local ();
 use Fcntl qw( :flock );
 use Errno qw( EEXIST );
 
+## no critic 'ProhibitMagicNumbers'
+
 # TODO: testcases:
 #  - header lines too long
 #  - 8-bit body handling
@@ -160,7 +162,7 @@ sub create_and_lock
 	my ($self) = @_;
 
 	if( ! -d $self->get_queue_directory ) {
-		die qq{Cannot create queue file without queue directory!};
+		die q{Cannot create queue file without queue directory!};
 	}
 
 	# 7th and 8th is random sequence number
@@ -199,7 +201,7 @@ sub create_and_lock
 	}
 
 	if ($iterations >= 3600 ) {
-		die qq{Could not create queue file; too many iterations};
+		die q{Could not create queue file; too many iterations};
 	}
 
 	return 1;
@@ -236,7 +238,7 @@ sub _format_rfc2822_date
 
 	my ($direc, $tz_hr, $tz_mi) = _tz_diff($time);
 
-	sprintf "%s, %d %s %d %02d:%02d:%02d %s%02d%02d",
+	sprintf '%s, %d %s %d %02d:%02d:%02d %s%02d%02d',
 	    $day, $mday, $month, $year, $hour, $min, $sec, $direc, $tz_hr, $tz_mi;
 }
 
@@ -266,7 +268,7 @@ sub synthesize_received_header
 			# TODO: helo needs cleansing, blow away non-ASCII-printable?
 			$header .= ' ' . $self->get_helo;
 		}
-		my $relay_info = "[" . $self->get_relay_address() . "]";
+		my $relay_info = '[' . $self->get_relay_address() . ']';
 		if( $self->get_relay_hostname() ne $relay_info ) {
 			$relay_info = $self->get_relay_hostname() . ' ' . $relay_info;
 		}
@@ -297,6 +299,8 @@ sub synthesize_received_header
 		$header .= " with $protocol";
 	}
 
+	# TODO: from within MIMEDefang, we probably want to push the
+	# currently-being-processed queue ID, then the one we're creating.
 	$header .= ' id ' . $self->get_queue_id();
 
 	# If more than one recipient, don't specify to protect privacy

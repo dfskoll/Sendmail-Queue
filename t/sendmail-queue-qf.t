@@ -180,10 +180,11 @@ END
 	lives_ok { $clone = $qf->clone() } 'clone() lives';
 	isa_ok($clone, 'Sendmail::Queue::Qf');
 
-	foreach my $key (qw(timestamp sender helo protocol relay_address relay_hostname local_hostname)) {
+	foreach my $key (qw(timestamp helo protocol relay_address relay_hostname local_hostname)) {
 		is( $clone->get($key), $qf->get($key), "clone has correct $key");
 	}
 
+	is( $clone->get_sender, undef, 'clone has no sender');
 	cmp_deeply( $clone->get_recipients, [], 'clone has empty recipients');
 	is( $clone->get_queue_id, undef, 'clone has no queue id');
 	is( $clone->get_queue_fh, undef, 'clone has no queue fh');

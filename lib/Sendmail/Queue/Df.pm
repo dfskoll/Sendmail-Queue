@@ -96,7 +96,7 @@ sub hardlink_to
 	}
 
 	if( ! $self->get_data_filename ) {
-		die qq{Current object has no path to hardlink!}
+		die q{Current object has no path to hardlink!}
 	}
 
 	if( ! link $target_path, $self->get_data_filename ) {

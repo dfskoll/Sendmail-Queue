@@ -41,7 +41,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     # and the queue ID as the value.
     my %results = $q->queue_multiple({
 	sender         => 'user@example.com',
-	recipient_sets => {
+	envelopes => {
 		'set one' => [
 			'first@example.net',
 			'second@example.org',
@@ -225,7 +225,7 @@ sub queue_message
 		die q{data as an object not yet supported};
 	}
 
-	my ($headers, $body) = split(/\n\n/, $args->{data}, 2);
+	my ($headers, $body) = split(/\n\n/, $args->{data}, 2); ## no critic ProhibitMagicNumbers
 
 	my $qf = Sendmail::Queue::Qf->new();
 	$qf->set_queue_directory($self->{_qf_directory});
@@ -386,9 +386,17 @@ sub queue_multiple
 	# Now, loop over all of the rest
 	# TODO: catch errors and delete partially-queued messages
 	# TODO: what if one envelope set errors out?  Do we bail on all?  Probably.
+	# TODO: validate data in the envelopes sections?
 	while( my($env_name, $env_data) = each %{ $args->{envelopes} } ) {
 		my $cur_qf = $qf->clone();
-		$cur_qf->set_sender( $env_data->{sender} );
+
+		my $sender = exists $env_data->{sender}
+				? $env_data->{sender}
+				: exists $args->{sender}
+					? $args->{sender}
+					: die q{no 'sender' available};
+
+		$cur_qf->set_sender( $sender );
 		$cur_qf->add_recipient( @{ $env_data->{recipients} } );
 		$cur_qf->create_and_lock();
 		$cur_qf->synthesize_received_header();
@@ -443,7 +451,7 @@ sub sync
 	sysopen(DIR_FH, $directory, O_RDONLY) or die qq{Couldn't sysopen $directory: $!};
 
 	my $handle = IO::Handle->new();
-	$handle->fdopen(fileno(DIR_FH), "w") or die qq{Couldn't fdopen the directory handle: $!};
+	$handle->fdopen(fileno(DIR_FH), 'w') or die qq{Couldn't fdopen the directory handle: $!};
 	$handle->sync or die qq{Couldn't sync: $!};
 	$handle->close;
 
