@@ -2,8 +2,9 @@ package Sendmail::Queue;
 use strict;
 use warnings;
 use Carp;
+use 5.8.0;
 
-our $VERSION = 0.01;
+our $VERSION = '0.100';
 
 use Sendmail::Queue::Qf;
 use Sendmail::Queue::Df;

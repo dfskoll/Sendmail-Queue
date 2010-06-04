@@ -1,5 +1,8 @@
 Revision history for Sendmail-Queue
 
+0.100	Fri, 04 Jun 2010 15:39:35 -0400
+	Now uses Mail::Header::Generator for generating received header
+
 0.01    Thu, 1 Nov 2007 16:14 -0400
         First version, released on an unsuspecting world.
 
