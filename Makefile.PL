@@ -1,16 +1,15 @@
-use strict;
-use warnings;
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-WriteMakefile(
-    NAME                => 'Sendmail::Queue',
-    AUTHOR              => 'David F. Skoll <dfs@roaringpenguin.com>',
-    VERSION_FROM        => 'lib/Sendmail/Queue.pm',
-    ABSTRACT_FROM       => 'lib/Sendmail/Queue.pm',
-    PL_FILES            => {},
-    PREREQ_PM => {
-        'Test::More' => 0,
-    },
-    dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'Sendmail-Queue-*' },
-);
+name     'Sendmail-Queue';
+all_from 'lib/Sendmail/Queue.pm';
+license  'gpl';
+
+requires 'File::Spec';
+requires 'IO::File';
+requires 'Scalar::Util';
+requires 'Time::Local';
+requires 'Class::Accessor::Fast';
+
+build_requires 'Test::More';
+
+WriteAll;
