@@ -9,6 +9,7 @@ use IO::File;
 use Time::Local ();
 use Fcntl qw( :flock );
 use Errno qw( EEXIST );
+use Mail::Header::Generator ();
 
 ## no critic 'ProhibitMagicNumbers'
 
@@ -255,64 +256,27 @@ sub synthesize_received_header
 {
 	my ($self) = @_;
 
-	my $header = 'Received: ';
+	my $g = Mail::Header::Generator->new();
 
-	# TODO: should escape our data for anything that could cause a
-	# problem in a () comment.  Weird characters outside a
-	# comment... ??
+	$self->{received_header} = $g->received({
+		helo => $self->get_helo(),
+		hostname => $self->get_local_hostname(),
+		product_name => $self->get_product_name(),
+		protocol => ($self->get_protocol || ''),
 
-	# Add relay address, if we have one
-	if( $self->get_relay_address ) {
-		$header .= 'from';
-		if( $self->get_helo ) {
-			# TODO: helo needs cleansing, blow away non-ASCII-printable?
-			$header .= ' ' . $self->get_helo;
-		}
-		my $relay_info = '[' . $self->get_relay_address() . ']';
-		if( $self->get_relay_hostname() ne $relay_info ) {
-			$relay_info = $self->get_relay_hostname() . ' ' . $relay_info;
-		}
-		$header .= ' (' . $relay_info . ')';
-	} else {
-		$header .= "(from $ENV{USER}\@localhost)";
-	}
+		# TODO: from within MIMEDefang, we probably want to push the
+		# currently-being-processed queue ID, then the one we're creating.
+		queue_id  => $self->get_queue_id(),
 
-	my $protocol = $self->get_protocol() || '';
+		recipients => $self->get_recipients(),
+		relay_address => $self->get_relay_address(),
+		relay_hostname => $self->get_relay_hostname(),
+		sender   => $self->get_sender(),
+		timestamp => $self->get_timestamp(),
+		user => $ENV{USER},
+	});
 
-	if( $self->get_local_hostname() ) {
-		$header .= "\n\tby " . $self->get_local_hostname();
-		if( $protocol =~ /e?smtp/i && $self->get_sender() ) {
-			$header .= ' (envelope-sender '
-				# TODO: clean envelope sender?
-			        . $self->get_sender()
-			        . ')';
-		}
-	}
-
-	if( $self->get_product_name() ) {
-		$header .= ' ('
-		        . $self->get_product_name()
-			. ')';
-	}
-
-	if( $protocol =~ /e?smtp/i ) {
-		$header .= " with $protocol";
-	}
-
-	# TODO: from within MIMEDefang, we probably want to push the
-	# currently-being-processed queue ID, then the one we're creating.
-	$header .= ' id ' . $self->get_queue_id();
-
-	# If more than one recipient, don't specify to protect privacy
-	if( scalar @{ $self->get_recipients } == 1 ) {
-		$header .= "\n\tfor " . $self->get_recipients->[0];
-	}
-
-	$header .= '; ' . _format_rfc2822_date( $self->get_timestamp() );
-
-	$self->{received_header} = $header;
-
-	return $header;
+	return $self->{received_header};
 }
 
 =head2 get_queue_filename
