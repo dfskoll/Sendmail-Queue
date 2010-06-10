@@ -263,11 +263,7 @@ sub synthesize_received_header
 		hostname => $self->get_local_hostname(),
 		product_name => $self->get_product_name(),
 		protocol => ($self->get_protocol || ''),
-
-		# TODO: from within MIMEDefang, we probably want to push the
-		# currently-being-processed queue ID, then the one we're creating.
 		queue_id  => $self->get_queue_id(),
-
 		recipients => $self->get_recipients(),
 		relay_address => $self->get_relay_address(),
 		relay_hostname => $self->get_relay_hostname(),
