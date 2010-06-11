@@ -1,37 +1,36 @@
+package test_queue_df;
 use strict;
 use warnings;
-use Test::More tests => 38;
-use Test::Exception;
-use Test::Deep;
+
+use base qw( Test::Class );
+
+use Test::Most;
 use File::Temp;
 use File::Slurp;
 
+
+# fake rand() to always return 0 for testing purposes.
+# Because rand() is a builtin, it's hard to clobber...
 BEGIN {
+	*Sendmail::Queue::Qf::rand = sub { 0 };
+	eval 'require Sendmail::Queue::Qf' or die $@;
+};
 
-	# fake rand() to always return 0 for testing purposes.
-	# Because rand() is a builtin, it needs to be overridden at
-	# BEGIN time, before Sendmail::Queue::Qf is read in.
-	*Sendmail::Queue::Qf::rand = sub {
-		0;
-	};
 
-	use_ok('Sendmail::Queue::Qf');
-}
-
-# Constructor
+sub test_constructor : Test(1)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	isa_ok( $qf, 'Sendmail::Queue::Qf');
 }
 
-# Setting of queue ID manually
+sub set_queue_id_manually : Test(1)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	$qf->set_queue_id( 'wookie' );
 	is( $qf->get_queue_id(), 'wookie', 'Got the queue ID we set');
 }
 
-# Generation of queue ID
+sub generate_queue_id : Test(3)
 {
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
 
@@ -47,7 +46,7 @@ BEGIN {
 	ok( -r "$dir/qf" . $qf->get_queue_id, 'Queue file exists');
 }
 
-# Generation of queue ID after calling set_queue_directory
+sub generate_qf_file : Test(2)
 {
 	my $qf = Sendmail::Queue::Qf->new({
 		timestamp => 1234567890,
@@ -57,6 +56,7 @@ BEGIN {
 
 	$qf->set_queue_directory( $dir );
 
+	# TODO: wtf do we do here?
 	my $count = 0;
 	my $existing_file = "$dir/foo";
 	open(FH,">$existing_file") or die $!;
@@ -77,7 +77,7 @@ BEGIN {
 }
 
 
-# write()
+sub write_qf : Test(4)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
@@ -122,7 +122,7 @@ END
 
 }
 
-# synthesize_received_header
+sub generate_received : Test(3)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
@@ -155,7 +155,7 @@ END
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 }
 
-# clone
+sub clone_qf_file : Test(9)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
@@ -180,9 +180,13 @@ END
 	lives_ok { $clone = $qf->clone() } 'clone() lives';
 	isa_ok($clone, 'Sendmail::Queue::Qf');
 
-	foreach my $key (qw(timestamp helo protocol relay_address relay_hostname local_hostname)) {
-		is( $clone->get($key), $qf->get($key), "clone has correct $key");
-	}
+	my %expected = %{$qf};
+	delete $expected{$_} for qw(queue_id sender queue_fh received_header);
+	$expected{recipients} = [];
+	cmp_deeply(
+		$clone,
+		noclass(\%expected),
+		'Clone has correct data');
 
 	is( $clone->get_sender, undef, 'clone has no sender');
 	cmp_deeply( $clone->get_recipients, [], 'clone has empty recipients');
@@ -190,7 +194,7 @@ END
 	is( $clone->get_queue_fh, undef, 'clone has no queue fh');
 }
 
-# unlink
+sub unlink_qf_file : Test(9)
 {
 	my $qf = Sendmail::Queue::Qf->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
@@ -209,3 +213,5 @@ END
 	dies_ok { $qf->write() } 'Write dies because queue file closed and deleted';
 	like($@, qr/write\(\) cannot write without an open filehandle/, '... with expected error');
 }
+
+__PACKAGE__->runtests unless caller();

@@ -1,28 +1,28 @@
+package test_queue_df;
 use strict;
 use warnings;
-use Test::More tests => 13;
-use Test::Exception;
+use base qw( Test::Class );
+
+use Test::Most;
 use File::Temp;
 use File::Slurp;
 
-BEGIN { 
-	use_ok('Sendmail::Queue::Df'); 
-}
+use Sendmail::Queue::Df;
 
-# Constructor
+sub test_constructor : Test(1)
 {
 	my $df = Sendmail::Queue::Df->new();
 	isa_ok( $df, 'Sendmail::Queue::Df');
 }
 
-# Setting of queue ID manually
+sub set_queue_id_manually : Test(1)
 {
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_id( 'wookie' );
 	is( $df->get_queue_id(), 'wookie', 'Got the queue ID we set');
 }
 
-# write()
+sub write_df_file : Test(1)
 {
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_id( 'wookie' );
@@ -44,7 +44,7 @@ END
 	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Wrote expected data');
 }
 
-# hardlink_to()
+sub hardlink_df_file : Test(2)
 {
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_id( 'DoubleWookie' );
@@ -81,7 +81,7 @@ END
 
 }
 
-# unlink
+sub unlink_df_file : Test(7)
 {
 	my $df = Sendmail::Queue::Df->new();
 	my $dir = File::Temp::tempdir( CLEANUP => 1 );
@@ -99,3 +99,5 @@ END
 
 	ok( ! $df->unlink, 'Unlink fails because file now does not exist');
 }
+
+__PACKAGE__->runtests unless caller();

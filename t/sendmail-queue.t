@@ -1,16 +1,16 @@
+package test_queue;
 use strict;
 use warnings;
-use Test::More tests => 22;
-use Test::Exception;
-use Test::Deep;
+
+use base qw( Test::Class );
+
+use Test::Most;
 use File::Temp;
 use File::Slurp;
 
-BEGIN {
-	use_ok('Sendmail::Queue');
-}
+use Sendmail::Queue;
 
-# Constructor
+sub test_constructor : Test(1)
 {
 	my $qf = Sendmail::Queue->new({
 		queue_directory => 't/tmp',
@@ -19,6 +19,7 @@ BEGIN {
 }
 
 # queue_message()
+sub queue_message : Test(4)
 {
 
 	my $dir = 't/tmp';
@@ -85,7 +86,7 @@ EOM
 
 }
 
-# queue_multiple()
+sub queue_multiple_success : Test(10)
 {
 
 	my $dir = 't/tmp';
@@ -198,7 +199,7 @@ EOM
 	is( unlink(<$dir/df*>), 2, 'Unlinked two data files');
 }
 
-# queue_message() fails, file gets unlinked
+sub queue_message_failure : Test(6)
 {
 
 	my $dir = 't/tmp';
@@ -243,3 +244,5 @@ EOM
 	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
 	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
 }
+
+__PACKAGE__->runtests unless caller();

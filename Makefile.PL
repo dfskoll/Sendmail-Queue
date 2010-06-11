@@ -11,6 +11,7 @@ requires 'Time::Local';
 requires 'Class::Accessor::Fast';
 requires 'Mail::Header::Generator';
 
-build_requires 'Test::More';
+build_requires 'Test::Most';
+build_requires 'Test::Class';
 
 WriteAll;
