@@ -351,10 +351,16 @@ sub queue_multiple
 		die q{data as an object not yet supported};
 	}
 
-	my ($headers, $body) = split(/\n\n/, $args->{data}, 2);
+	my ($headers, $data) = split(/\n\n/, $args->{data}, 2);
 
-	my $qf = Sendmail::Queue::Qf->new();
-	$qf->set_queue_directory($self->{_qf_directory});
+	my $qf = Sendmail::Queue::Qf->new({
+		queue_directory => $self->{_qf_directory}
+	});
+
+	if( $data =~ tr/\200-\377// ) {
+		# EF_HAS8BIT flag bit gets set if we have 8 bit characters in body.
+		$qf->set_data_is_8bit(1);
+	}
 
 	# Allow passing of optional info down to Qf object
 	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
@@ -403,7 +409,7 @@ sub queue_multiple
 				# If this is the first one, create and write
 				# the df file
 				$first_df = $cur_df;
-				$first_df->set_data( $body );
+				$first_df->set_data( $data );
 				$first_df->write();
 			} else {
 				# Otherwise, link to the first df

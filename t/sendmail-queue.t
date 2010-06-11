@@ -317,4 +317,72 @@ EOM
 	is( scalar @df, 0, 'No df files');
 }
 
+sub queue_message_8bit : Test(4)
+{
+	my ($self) = @_;
+
+	my $queue = Sendmail::Queue->new({
+		queue_directory => $self->{tmpdir}
+	});
+
+	my $data = <<"EOM";
+From: foobar
+To: someone
+Date: Wed, 07 Nov 2007 14:54:33 -0500
+
+Test message with m\x{94}\x{94}se!
+
+-- 
+Dave
+EOM
+
+	my $qid = $queue->queue_message({
+		sender => 'dmo@dmo.ca',
+		recipients => [
+			'dmo@roaringpenguin.com',
+			'dfs@roaringpenguin.com',
+		],
+		data => $data,
+		timestamp => 1234567890,
+		protocol => 'ESMTP',
+	});
+
+	my $qf_regex = qr/^V6
+T1234567890
+K0
+N0
+P30000
+F8
+\$rESMTP
+\${daemon_flags}
+S<dmo\@dmo.ca>
+C:<dmo\@roaringpenguin.com>
+rRFC822; dmo\@roaringpenguin.com
+RPFD:dmo\@roaringpenguin.com
+C:<dfs\@roaringpenguin.com>
+rRFC822; dfs\@roaringpenguin.com
+RPFD:dfs\@roaringpenguin.com
+H\?\?Received: \(from dmo\@localhost\)
+	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+H\?\?From: foobar
+H\?\?To: someone
+H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
+.
+$/;
+
+	my $df_expected =<<"EOM";
+Test message with m\x{94}\x{94}se!
+
+-- 
+Dave
+EOM
+
+	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
+	is( File::Slurp::slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
+
+	is( unlink(glob("$self->{tmpdir}/qf*")), 1, 'Unlinked one queue file');
+	is( unlink(glob("$self->{tmpdir}/df*")), 1, 'Unlinked one data file');
+
+}
+
 __PACKAGE__->runtests unless caller();

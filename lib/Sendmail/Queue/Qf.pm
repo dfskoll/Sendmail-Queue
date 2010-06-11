@@ -39,6 +39,7 @@ __PACKAGE__->mk_accessors( qw(
 	received_header
 	priority
 	qf_version
+	data_is_8bit
 ) );
 
 =head1 NAME
@@ -534,10 +535,20 @@ sub _format_priority
 
 sub _format_flag_bits
 {
+	my ($self) = @_;
+
 	# TODO: we actually write a V6 queue file now!  Fix!
+	my $flags = '';
 	# Possible flag bits for V8 queue file:
 	# 	8 = Body has 8-bit data (EF_HAS8BIT)
-	# 		- TODO figure out how to handle this!
+	# 		- This should be set if the body contains any
+	# 		  octets with the high bit set.  This can be detected
+	# 		  by running
+	# 		  	$data =~ tr/\200-\377//
+	# 		  (Sendmail does the C equivalent, char|0x80 in a loop)
+	# 		  but... we don't have the data here in the qf object,
+	# 		  so it must be set in Sendmail::Queue by calling set_data_is_8bit(1).
+	$flags .= '8' if $self->get_data_is_8bit();
 	# 	b = delete Bcc: header (EF_DELETE_BCC)
 	# 		- for our purposes, we want to reproduce the
 	#  		  Bcc: header in the queued mail.  Future uses
@@ -573,7 +584,7 @@ sub _format_flag_bits
 	# 		  want this flag set, but see 'r' flag above.
 	# Some details available in $$11.11.7 of the bat book.  Other
 	# details require looking at Sendmail sources.
-	'F'
+	'F' . $flags;
 }
 
 sub _format_macros

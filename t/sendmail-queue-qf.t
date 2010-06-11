@@ -134,6 +134,51 @@ END
 
 }
 
+sub write_qf_with_flags : Test(4)
+{
+	my ($self) = @_;
+
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1234567890,
+		queue_directory => $self->{tmpdir},
+		protocol    => 'ESMTP',
+		sender      => 'dmo@dmo.ca',
+		recipients  => [ 'dmo@roaringpenguin.com' ],
+	});
+
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+	$qf->set_headers("From: foobar\nTo: someone\nDate: Wed, 07 Nov 2007 14:54:33 -0500\n");
+	$qf->set_data_is_8bit(1);
+
+	$qf->write();
+
+	ok( $qf->sync, 'sync() succeeded');
+
+	ok( $qf->close, 'close() succeeded' );
+
+	my $expected = <<'END';
+V6
+T1234567890
+K0
+N0
+P30000
+F8
+$rESMTP
+${daemon_flags}
+S<dmo@dmo.ca>
+C:<dmo@roaringpenguin.com>
+rRFC822; dmo@roaringpenguin.com
+RPFD:dmo@roaringpenguin.com
+H??From: foobar
+H??To: someone
+H??Date: Wed, 07 Nov 2007 14:54:33 -0500
+.
+END
+
+	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+
+}
+
 sub generate_received : Test(3)
 {
 	my ($self) = @_;
