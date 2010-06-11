@@ -16,6 +16,18 @@ BEGIN {
 	eval 'require Sendmail::Queue::Qf' or die $@;
 };
 
+sub make_tmpdir : Test(setup)
+{
+	my ($self) = @_;
+	$self->{tmpdir} = File::Temp::tempdir( CLEANUP => 1 );
+}
+
+sub del_tmpdir : Test(teardown)
+{
+	my ($self) = @_;
+
+	delete $self->{tmpdir};
+}
 
 sub test_constructor : Test(1)
 {
@@ -32,10 +44,10 @@ sub set_queue_id_manually : Test(1)
 
 sub generate_queue_id : Test(3)
 {
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	my ($self) = @_;
 
 	my $qf = Sendmail::Queue::Qf->new({
-		queue_directory => $dir,
+		queue_directory => $self->{tmpdir},
 		timestamp => 1234567890,
 	});
 
@@ -43,23 +55,22 @@ sub generate_queue_id : Test(3)
 
 	my $pid = sprintf("%06d", $$);
 	is( $qf->get_queue_id(), "n1DNVU00$pid", 'Queue ID is correct and has sequence number of 0');
-	ok( -r "$dir/qf" . $qf->get_queue_id, 'Queue file exists');
+	ok( -r "$self->{tmpdir}/qf" . $qf->get_queue_id, 'Queue file exists');
 }
 
 sub generate_qf_file : Test(2)
 {
+	my ($self) = @_;
+
 	my $qf = Sendmail::Queue::Qf->new({
-		timestamp => 1234567890,
+		timestamp       => 1234567890,
+		queue_directory => $self->{tmpdir},
 	});
-
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
-
-	$qf->set_queue_directory( $dir );
 
 	# All of this evil is to force file collisions so that we can see that
 	# the sequence number is 3 higher than the value given by rand().
 	my $count = 0;
-	my $existing_file = "$dir/foo";
+	my $existing_file = "$self->{tmpdir}/foo";
 	open(FH,">$existing_file") or die $!;
 	close FH;
 	no warnings 'once';
@@ -81,16 +92,15 @@ sub generate_qf_file : Test(2)
 
 sub write_qf : Test(4)
 {
-	my $qf = Sendmail::Queue::Qf->new();
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	my ($self) = @_;
 
-	$qf->set_queue_directory( $dir );
-
-	$qf->set_timestamp ( 1234567890 );
-	$qf->set_protocol('ESMTP');
-	$qf->set_sender('dmo@dmo.ca');
-	$qf->add_recipient('dmo@roaringpenguin.com');
-
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1234567890,
+		queue_directory => $self->{tmpdir},
+		protocol    => 'ESMTP',
+		sender      => 'dmo@dmo.ca',
+		recipients  => [ 'dmo@roaringpenguin.com' ],
+	});
 
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 	$qf->set_headers("From: foobar\nTo: someone\nDate: Wed, 07 Nov 2007 14:54:33 -0500\n");
@@ -126,11 +136,13 @@ END
 
 sub generate_received : Test(3)
 {
-	my $qf = Sendmail::Queue::Qf->new();
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
+	my ($self) = @_;
 
-	$qf->set_queue_directory( $dir );
-	$qf->set_timestamp(1195000000);
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1195000000,
+		queue_directory => $self->{tmpdir},
+	});
+
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 
 	# First, try it with no values set.
@@ -159,10 +171,13 @@ sub generate_received : Test(3)
 
 sub clone_qf_file : Test(9)
 {
-	my $qf = Sendmail::Queue::Qf->new();
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
-	$qf->set_queue_directory( $dir );
-	$qf->set_timestamp(1195000000);
+	my ($self) = @_;
+
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1195000000,
+		queue_directory => $self->{tmpdir},
+	});
+
 	$qf->set_sender('dmo@dmo.ca');
 	$qf->set_helo('loser');
 	$qf->set_protocol('ESMTP');
@@ -198,9 +213,12 @@ sub clone_qf_file : Test(9)
 
 sub unlink_qf_file : Test(9)
 {
-	my $qf = Sendmail::Queue::Qf->new();
-	my $dir = File::Temp::tempdir( CLEANUP => 1 );
-	$qf->set_queue_directory( $dir );
+	my ($self) = @_;
+
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1195000000,
+		queue_directory => $self->{tmpdir},
+	});
 
 	ok( ! $qf->get_queue_filename, 'Object has no filename');
 	ok( ! $qf->unlink, 'Unlink fails when no filename');

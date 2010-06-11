@@ -10,22 +10,35 @@ use File::Slurp;
 
 use Sendmail::Queue;
 
-sub test_constructor : Test(1)
+sub make_tmpdir : Test(setup)
 {
-	my $qf = Sendmail::Queue->new({
-		queue_directory => 't/tmp',
-	});
-	isa_ok( $qf, 'Sendmail::Queue');
+	my ($self) = @_;
+	$self->{tmpdir} = File::Temp::tempdir( CLEANUP => 1 );
 }
 
-# queue_message()
+sub del_tmpdir : Test(teardown)
+{
+	my ($self) = @_;
+
+	delete $self->{tmpdir}
+}
+
+sub test_constructor : Test(1)
+{
+	my ($self) = @_;
+
+	my $q = Sendmail::Queue->new({
+		queue_directory => $self->{tmpdir}
+	});
+	isa_ok( $q, 'Sendmail::Queue');
+}
+
 sub queue_message : Test(4)
 {
-
-	my $dir = 't/tmp';
+	my ($self) = @_;
 
 	my $queue = Sendmail::Queue->new({
-		queue_directory => $dir,
+		queue_directory => $self->{tmpdir}
 	});
 
 	my $data = <<EOM;
@@ -78,21 +91,20 @@ Test message
 Dave
 EOM
 
-	like( File::Slurp::slurp( "$dir/qf$qid" ), $qf_regex, 'Wrote expected qf data');
-	is( File::Slurp::slurp( "$dir/df$qid" ), $df_expected, 'Wrote expected df data');
+	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
+	is( File::Slurp::slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
 
-	is( unlink(<$dir/qf*>), 1, 'Unlinked one queue file');
-	is( unlink(<$dir/df*>), 1, 'Unlinked one data file');
+	is( unlink(glob("$self->{tmpdir}/qf*")), 1, 'Unlinked one queue file');
+	is( unlink(glob("$self->{tmpdir}/df*")), 1, 'Unlinked one data file');
 
 }
 
 sub queue_multiple_success : Test(11)
 {
-
-	my $dir = 't/tmp';
+	my ($self) = @_;
 
 	my $queue = Sendmail::Queue->new({
-		queue_directory => $dir,
+		queue_directory => $self->{tmpdir}
 	});
 
 	my $data = <<EOM;
@@ -186,28 +198,27 @@ EOM
 
 	isnt( $qids->{stream_one}, $qids->{stream_two}, 'Got two different queue IDs');
 
-	like( File::Slurp::slurp( "$dir/qf$qids->{stream_one}" ), $qf_one_regex, 'Wrote expected qf data');
-	like( File::Slurp::slurp( "$dir/qf$qids->{stream_two}" ), $qf_two_regex, 'Wrote expected qf data');
-	is( File::Slurp::slurp( "$dir/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
-	is( File::Slurp::slurp( "$dir/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
+	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qids->{stream_one}" ), $qf_one_regex, 'Wrote expected qf data');
+	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qids->{stream_two}" ), $qf_two_regex, 'Wrote expected qf data');
+	is( File::Slurp::slurp( "$self->{tmpdir}/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
+	is( File::Slurp::slurp( "$self->{tmpdir}/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
 
-	is( (stat("$dir/df$qids->{stream_one}"))[1],
-	    (stat("$dir/df$qids->{stream_two}"))[1],
+	is( (stat("$self->{tmpdir}/df$qids->{stream_one}"))[1],
+	    (stat("$self->{tmpdir}/df$qids->{stream_two}"))[1],
 	    'Both df files have the same inode number');
 
-	is( (stat("$dir/df$qids->{stream_one}"))[3], 2, 'nlink is 2 on df file');
+	is( (stat("$self->{tmpdir}/df$qids->{stream_one}"))[3], 2, 'nlink is 2 on df file');
 
-	is( unlink(<$dir/qf*>), 2, 'Unlinked two queue files');
-	is( unlink(<$dir/df*>), 2, 'Unlinked two data files');
+	is( unlink(glob("$self->{tmpdir}/qf*")), 2, 'Unlinked two queue files');
+	is( unlink(glob("$self->{tmpdir}/df*")), 2, 'Unlinked two data files');
 }
 
-sub queue_message_failure : Test(6)
+sub queue_message_failure : Test(4)
 {
-
-	my $dir = 't/tmp';
+	my ($self) = @_;
 
 	my $queue = Sendmail::Queue->new({
-		queue_directory => $dir,
+		queue_directory => $self->{tmpdir}
 	});
 
 	my $data = <<EOM;
@@ -220,7 +231,7 @@ Test message
 Dave
 EOM
 
-	chmod 0555, $dir;
+	chmod 0555, $self->{tmpdir};
 
 	dies_ok {
 	my $qid = $queue->queue_message({
@@ -233,27 +244,24 @@ EOM
 		timestamp => 1234567890,
 	}); } 'queue_message() dies';
 
-	chmod 0755, $dir;
+	chmod 0755, $self->{tmpdir};
 
-	like( $@, qr{Error creating qf file t/tmp/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
+	like( $@, qr{Error creating qf file /tmp/[^/]+/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
 
-	my @qf = <$dir/qf*>;
-	my @df = <$dir/df*>;
+	my @qf = glob("$self->{tmpdir}/qf*");
+	my @df = glob("$self->{tmpdir}/df*");
 
 	is( scalar @qf, 0, 'No qf files');
 	is( scalar @df, 0, 'No df files');
 
-	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
-	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
 }
 
-sub queue_multiple_failure : Test(8)
+sub queue_multiple_failure : Test(6)
 {
-
-	my $dir = 't/tmp';
+	my ($self) = @_;
 
 	my $queue = Sendmail::Queue->new({
-		queue_directory => $dir,
+		queue_directory => $self->{tmpdir}
 	});
 
 	my $data = <<EOM;
@@ -299,17 +307,14 @@ EOM
 
 	like( $@, qr{we made the second one die}, 'Got expected error');
 
-	my @qf = <$dir/qf*>;
-	my @df = <$dir/df*>;
+	my @qf = glob("$self->{tmpdir}/qf*");
+	my @df = glob("$self->{tmpdir}/df*");
 
 	is( $qf_unlink_count, 2, 'Got qf_unlink_count of 2');
 	is( $df_unlink_count, 2, 'Got df_unlink_count of 1');
 
 	is( scalar @qf, 0, 'No qf files');
 	is( scalar @df, 0, 'No df files');
-
-	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
-	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
 }
 
 __PACKAGE__->runtests unless caller();
