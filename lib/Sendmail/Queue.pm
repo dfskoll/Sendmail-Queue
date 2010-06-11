@@ -333,6 +333,10 @@ queue ID as the value.
 	data           => $string_or_object,
     });
 
+In the event that we cannot create a queue file for ANY of the envelopes, we
+die() with an appropriate error after unlinking all created queue files --
+either all succeed, or none succeed.
+
 =cut
 
 sub queue_multiple
@@ -363,50 +367,67 @@ sub queue_multiple
 	$qf->set_headers( $headers );
 
 	my $first_df;
-	my @locked_qfs = ();
+	my @queued_qfs = ();
 
 	my %results;
 
 	# Now, loop over all of the rest
-	# TODO: catch errors and delete partially-queued messages
-	# TODO: what if one envelope set errors out?  Do we bail on all?  Probably.
 	# TODO: validate data in the envelopes sections?
-	while( my($env_name, $env_data) = each %{ $args->{envelopes} } ) {
-		my $cur_qf = $qf->clone();
+	eval {
+		while( my($env_name, $env_data) = each %{ $args->{envelopes} } ) {
+			my $cur_qf = $qf->clone();
 
-		my $sender = exists $env_data->{sender}
-				? $env_data->{sender}
-				: exists $args->{sender}
-					? $args->{sender}
-					: die q{no 'sender' available};
+			my $sender = exists $env_data->{sender}
+					? $env_data->{sender}
+					: exists $args->{sender}
+						? $args->{sender}
+						: die q{no 'sender' available};
 
-		$cur_qf->set_sender( $sender );
-		$cur_qf->add_recipient( @{ $env_data->{recipients} } );
-		$cur_qf->create_and_lock();
-		$cur_qf->synthesize_received_header();
-		$cur_qf->write();
-		$cur_qf->sync();
+			$cur_qf->set_sender( $sender );
+			$cur_qf->add_recipient( @{ $env_data->{recipients} } );
+			$cur_qf->create_and_lock();
 
-		my $cur_df = Sendmail::Queue::Df->new();
-		$cur_df->set_queue_directory($self->{_df_directory});
-		$cur_df->set_queue_id( $cur_qf->get_queue_id );
-		if( ! $first_df ) {
-			# If this is the first one, create and write
-			# the df file
-			$first_df = $cur_df;
-			$first_df->set_data( $body );
-			$first_df->write();
-		} else {
-			# Otherwise, link to the first df
-			$cur_df->hardlink_to( $first_df->get_data_filename() );
+			# As soon as it's created, put it on the list so it can
+			# be cleaned up later if necessary.
+			push @queued_qfs, $cur_qf;
+
+			$cur_qf->synthesize_received_header();
+			$cur_qf->write();
+			$cur_qf->sync();
+
+			my $cur_df = Sendmail::Queue::Df->new({
+				queue_directory => $self->{_df_directory},
+				queue_id        => $cur_qf->get_queue_id(),
+			});
+			if( ! $first_df ) {
+				# If this is the first one, create and write
+				# the df file
+				$first_df = $cur_df;
+				$first_df->set_data( $body );
+				$first_df->write();
+			} else {
+				# Otherwise, link to the first df
+				$cur_df->hardlink_to( $first_df->get_data_filename() );
+			}
+
+			$results{ $env_name } = $cur_qf->get_queue_id;
 		}
-		push @locked_qfs, $cur_qf;
-
-		$results{ $env_name } = $cur_qf->get_queue_id;
+	};
+	if( $@ ) {
+		# Something bad happened... wrap it all up and re-throw
+		for my $qf (@queued_qfs) {
+			my $df = Sendmail::Queue::Df->new({
+				queue_directory => $self->{_df_directory},
+				queue_id        => $qf->get_queue_id(),
+			});
+			$df->unlink;
+			$qf->unlink;
+		}
+		die $@;
 	}
 
 	# Close the queue files to release the locks
-	$_->close() for (@locked_qfs);
+	$_->close() for (@queued_qfs);
 
 	$self->sync();
 

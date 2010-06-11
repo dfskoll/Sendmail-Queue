@@ -245,4 +245,69 @@ EOM
 	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
 }
 
+sub queue_multiple_failure : Test(8)
+{
+
+	my $dir = 't/tmp';
+
+	my $queue = Sendmail::Queue->new({
+		queue_directory => $dir,
+	});
+
+	my $data = <<EOM;
+From: foobar
+To: someone
+Date: Wed, 07 Nov 2007 14:54:33 -0500
+
+Test message
+-- 
+Dave
+EOM
+
+	no warnings 'redefine';
+	local *Sendmail::Queue::Df::hardlink_to = sub { die q{we made the second one die} };
+
+	my $qf_unlink = \&Sendmail::Queue::Qf::unlink;
+	my $qf_unlink_count=0;
+	local *Sendmail::Queue::Qf::unlink = sub { $qf_unlink_count++; goto &$qf_unlink };
+
+	my $df_unlink = \&Sendmail::Queue::Df::unlink;
+	my $df_unlink_count=0;
+	local *Sendmail::Queue::Df::unlink = sub { $df_unlink_count++; goto &$df_unlink };
+	use warnings 'redefine';
+
+	dies_ok {
+	my $qid = $queue->queue_multiple({
+		sender => 'dmo@dmo.ca',
+		data => $data,
+		timestamp => 1234567890,
+		envelopes => {
+			one => {
+				recipients => [
+					'dmo@roaringpenguin.com',
+				],
+			},
+			two => {
+				recipients => [
+					'dfs@roaringpenguin.com',
+				],
+			},
+		}
+	}); } 'queue_multiple() dies';
+
+	like( $@, qr{we made the second one die}, 'Got expected error');
+
+	my @qf = <$dir/qf*>;
+	my @df = <$dir/df*>;
+
+	is( $qf_unlink_count, 2, 'Got qf_unlink_count of 2');
+	is( $df_unlink_count, 2, 'Got df_unlink_count of 1');
+
+	is( scalar @qf, 0, 'No qf files');
+	is( scalar @df, 0, 'No df files');
+
+	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
+	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
+}
+
 __PACKAGE__->runtests unless caller();
