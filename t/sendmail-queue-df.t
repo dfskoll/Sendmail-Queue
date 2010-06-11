@@ -44,7 +44,7 @@ END
 	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Wrote expected data');
 }
 
-sub hardlink_df_file : Test(2)
+sub hardlink_df_file : Test(3)
 {
 	my $df = Sendmail::Queue::Df->new();
 	$df->set_queue_id( 'DoubleWookie' );
@@ -68,7 +68,9 @@ END
 
 	$df->hardlink_to( $file );
 
-	# TODO: stat both files and check the inode
+	is( (stat($df->get_data_filename))[1],
+	    (stat($file))[1],
+	    'Both files have the same inode number');
 
 	$df->write();
 

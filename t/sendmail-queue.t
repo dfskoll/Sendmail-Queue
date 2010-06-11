@@ -86,7 +86,7 @@ EOM
 
 }
 
-sub queue_multiple_success : Test(10)
+sub queue_multiple_success : Test(11)
 {
 
 	my $dir = 't/tmp';
@@ -191,7 +191,9 @@ EOM
 	is( File::Slurp::slurp( "$dir/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
 	is( File::Slurp::slurp( "$dir/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
 
-	# TODO: stat each of the files and make sure the inode num is the same
+	is( (stat("$dir/df$qids->{stream_one}"))[1],
+	    (stat("$dir/df$qids->{stream_two}"))[1],
+	    'Both df files have the same inode number');
 
 	is( (stat("$dir/df$qids->{stream_one}"))[3], 2, 'nlink is 2 on df file');
 

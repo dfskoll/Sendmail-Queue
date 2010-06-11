@@ -56,18 +56,20 @@ sub generate_qf_file : Test(2)
 
 	$qf->set_queue_directory( $dir );
 
-	# TODO: wtf do we do here?
+	# All of this evil is to force file collisions so that we can see that
+	# the sequence number is 3 higher than the value given by rand().
 	my $count = 0;
 	my $existing_file = "$dir/foo";
 	open(FH,">$existing_file") or die $!;
 	close FH;
 	no warnings 'once';
 	local *File::Spec::catfile = sub {
-
+		my $class = shift;
 		if( $count++ < 3 ) {
+			note("Forcing collision for $_[1]");
 			return $existing_file;
 		}
-		return "$dir/new_file";
+		return join('/', @_);
 	};
 
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
