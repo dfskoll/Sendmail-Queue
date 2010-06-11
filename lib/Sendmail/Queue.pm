@@ -43,13 +43,19 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     my %results = $q->queue_multiple({
 	sender         => 'user@example.com',
 	envelopes => {
-		'set one' => [
-			'first@example.net',
-			'second@example.org',
-		],
-		'set two' => [
-			'third@example.org',
-		],
+		'envelope one' => {
+			sender     => 'differentuser@example.com',
+			recipients => [
+				'first@example.net',
+				'second@example.org',
+			],
+		},
+		'envelope two' => {
+			recipients => [
+				'third@example.net',
+				'fourth@example.org',
+			],
+		}
 	},
 	data           => $string_or_object,
     });
@@ -226,36 +232,15 @@ sub queue_message
 		die q{data as an object not yet supported};
 	}
 
-	my ($headers, $body) = split(/\n\n/, $args->{data}, 2); ## no critic ProhibitMagicNumbers
-
-	my $qf = Sendmail::Queue::Qf->new();
-	$qf->set_queue_directory($self->{_qf_directory});
-
-	# Allow passing of optional info down to Qf object
-	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
-		if( exists $args->{$optarg} ) {
-			$qf->set( $optarg, $args->{$optarg} );
+	$args->{envelopes} = {
+		single_envelope => {
+			recipients => delete $args->{recipients}
 		}
-	}
+	};
 
+	my $result = $self->queue_multiple( $args );
 
-	$qf->create_and_lock();
-	$qf->set_sender( $args->{sender} );
-	$qf->add_recipient( @{ $args->{recipients} } );
-
-	$qf->set_headers( $headers );
-
-	# Generate a Received header
-	$qf->synthesize_received_header();
-
-	my $df = Sendmail::Queue::Df->new();
-	$df->set_queue_directory($self->{_df_directory});
-	$df->set_queue_id( $qf->get_queue_id );
-	$df->set_data( $body );
-
-	$self->enqueue( $qf, $df);
-
-	return $qf->get_queue_id;
+	return $result->{single_envelope};
 }
 
 =head2 enqueue ( $qf, $df )
@@ -331,14 +316,14 @@ queue ID as the value.
     my %results = $q->queue_multiple({
 	envelopes => {
 		'envelope one' => {
-			sender         => 'user@example.com',
+			sender     => 'user@example.com',
 			recipients => [
 				'first@example.net',
 				'second@example.org',
 			],
 		}
 		'envelope two' => {
-			sender         => 'user@example.com',
+			sender     => 'user@example.com',
 			recipients => [
 				'third@example.net',
 				'fourth@example.org',
@@ -354,10 +339,8 @@ sub queue_multiple
 {
 	my ($self, $args) = @_;
 
-	# TODO: common with queue_message - pull out?
 	foreach my $argname qw( envelopes data ) {
 		die qq{$argname argument must be specified} unless exists $args->{$argname}
-
 	}
 
 	if( ref $args->{data} ) {
