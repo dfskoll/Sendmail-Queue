@@ -66,6 +66,8 @@ sub new
 		queue_id => undef,
 		data => undef,
 		hardlinked => 0,
+
+		%{ $args || {} }
 	};
 
 	bless $self, $class;
