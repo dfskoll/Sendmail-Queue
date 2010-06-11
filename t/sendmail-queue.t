@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 21;
+use Test::More tests => 22;
 use Test::Exception;
 use Test::Deep;
 use File::Temp;
@@ -234,9 +234,11 @@ EOM
 
 	like( $@, qr{Error creating qf file t/tmp/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
 
-	my @files = <$dir/*qf>;
+	my @qf = <$dir/qf*>;
+	my @df = <$dir/df*>;
 
-	is( scalar @files, 0, 'No qf files');
+	is( scalar @qf, 0, 'No qf files');
+	is( scalar @df, 0, 'No df files');
 
 	is( unlink(<$dir/qf*>), 0, 'Cleanup unlinked no queue files');
 	is( unlink(<$dir/df*>), 0, 'Cleanup unlinked no data files');
