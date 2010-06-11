@@ -534,6 +534,7 @@ sub _format_priority
 
 sub _format_flag_bits
 {
+	# TODO: we actually write a V6 queue file now!  Fix!
 	# Possible flag bits for V8 queue file:
 	# 	8 = Body has 8-bit data (EF_HAS8BIT)
 	# 		- TODO figure out how to handle this!
