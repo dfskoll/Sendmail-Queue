@@ -38,7 +38,7 @@ Sendmail::Queue - Manipulate Sendmail queues directly
     });
 
     # Queue multiple copies of a message using multiple envelopes, but
-    # the same body.  Results contain the recipient set name as key,
+    # the same body.  Results contain the envelope name as key,
     # and the queue ID as the value.
     my %results = $q->queue_multiple({
 	sender         => 'user@example.com',
@@ -357,6 +357,9 @@ sub queue_multiple
 		queue_directory => $self->{_qf_directory}
 	});
 
+	# FUTURE: Maybe a regex is faster?  We only care about
+	# the existence of at least on 8-bit character, not the
+	# total count as returned by tr//
 	if( $data =~ tr/\200-\377// ) {
 		# EF_HAS8BIT flag bit gets set if we have 8 bit characters in body.
 		$qf->set_data_is_8bit(1);
@@ -433,8 +436,14 @@ sub queue_multiple
 	}
 
 	# Close the queue files to release the locks
+	# FIXME: Should $self->sync() come BEFORE we release
+	# the locks?  That's what the inotify output seems
+	# to indicate.
 	$_->close() for (@queued_qfs);
 
+	# FIXME: This can throw an exception... do we just leave
+	# the df/qf files in place?  (I guess so... there's no sane
+	# recovery mechanism.)
 	$self->sync();
 
 	return \%results;

@@ -16,6 +16,10 @@ my @recipients = @ARGV;
 my $data = do { local $/; <STDIN> };
 
 use Sendmail::Queue;
+
+# FIXME: This queue directory is Debian-specific.
+# FUTURE: Do we want to try the common client mqueue
+# locations to make it work on more distros?
 my $queue = Sendmail::Queue->new({
 	queue_directory => '/var/spool/mqueue-client',
 });

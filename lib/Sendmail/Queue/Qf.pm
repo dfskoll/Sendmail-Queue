@@ -157,6 +157,8 @@ intermediate tf file and renaming aftewards.  This is all good and well
 for creating /new/ qf files -- sendmail does it that way as well -- but
 if we ever want to rewrite one, it's not safe.
 
+FIXME: Are you *sure* it's safe to create the qf directly?
+
 =cut
 
 sub create_and_lock
@@ -697,7 +699,11 @@ sub _format_recipient_addresses
 		$recip =~ s/^[<\s]+//;
 		$recip =~ s/[>\s]+$//;
 
+		# FIXME: C is the controlling user.
+		# I'm pretty sure this is wrong.
+		# See http://www.c3.hu/docs/oreilly/tcpip/sendmail/ch23_09.htm#SML2-CH-23-SECT-9-2
 		push @out, "C:<$recip>";
+
 		push @out, "rRFC822; $recip";
 
 
