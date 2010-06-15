@@ -421,6 +421,11 @@ sub queue_multiple
 
 			$results{ $env_name } = $cur_qf->get_queue_id;
 		}
+
+		$self->sync();
+
+		# Close the queue files to release the locks
+		$_->close() for (@queued_qfs);
 	};
 	if( $@ ) {
 		# Something bad happened... wrap it all up and re-throw
@@ -434,14 +439,6 @@ sub queue_multiple
 		}
 		die $@;
 	}
-
-	# FIXME: This can throw an exception... do we just leave
-	# the df/qf files in place?  (I guess so... there's no sane
-	# recovery mechanism.)
-	$self->sync();
-
-	# Close the queue files to release the locks
-	$_->close() for (@queued_qfs);
 
 	return \%results;
 }
