@@ -435,16 +435,13 @@ sub queue_multiple
 		die $@;
 	}
 
-	# Close the queue files to release the locks
-	# FIXME: Should $self->sync() come BEFORE we release
-	# the locks?  That's what the inotify output seems
-	# to indicate.
-	$_->close() for (@queued_qfs);
-
 	# FIXME: This can throw an exception... do we just leave
 	# the df/qf files in place?  (I guess so... there's no sane
 	# recovery mechanism.)
 	$self->sync();
+
+	# Close the queue files to release the locks
+	$_->close() for (@queued_qfs);
 
 	return \%results;
 }
