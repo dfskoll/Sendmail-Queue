@@ -121,7 +121,6 @@ F
 $rESMTP
 ${daemon_flags}
 S<dmo@dmo.ca>
-C:<dmo@roaringpenguin.com>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com
 H??From: foobar
@@ -166,7 +165,6 @@ F8
 $rESMTP
 ${daemon_flags}
 S<dmo@dmo.ca>
-C:<dmo@roaringpenguin.com>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com
 H??From: foobar
@@ -320,7 +318,6 @@ F
 $rESMTP
 ${daemon_flags}
 S<dmo@dmo.ca>
-C:<dmo@roaringpenguin.com>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com
 H??From: foobar

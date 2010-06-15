@@ -71,10 +71,8 @@ F
 \$rESMTP
 \${daemon_flags}
 S<dmo\@dmo.ca>
-C:<dmo\@roaringpenguin.com>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
-C:<dfs\@roaringpenguin.com>
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
@@ -153,10 +151,8 @@ F
 \$rESMTP
 \${daemon_flags}
 S<dmo\@dmo.ca>
-C:<dmo\@roaringpenguin.com>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
-C:<dfs\@roaringpenguin.com>
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
@@ -176,10 +172,8 @@ F
 \$rESMTP
 \${daemon_flags}
 S<dmo\@dmo.ca>
-C:<foo\@roaringpenguin.com>
 rRFC822; foo\@roaringpenguin.com
 RPFD:foo\@roaringpenguin.com
-C:<bar\@roaringpenguin.com>
 rRFC822; bar\@roaringpenguin.com
 RPFD:bar\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
@@ -356,10 +350,8 @@ F8
 \$rESMTP
 \${daemon_flags}
 S<dmo\@dmo.ca>
-C:<dmo\@roaringpenguin.com>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
-C:<dfs\@roaringpenguin.com>
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from dmo\@localhost\)
