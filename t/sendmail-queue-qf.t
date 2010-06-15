@@ -279,4 +279,65 @@ sub unlink_qf_file : Test(9)
 	like($@, qr/write\(\) cannot write without an open filehandle/, '... with expected error');
 }
 
+sub write_qf_gigantic_header : Test(4)
+{
+	my ($self) = @_;
+
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1234567890,
+		queue_directory => $self->{tmpdir},
+		protocol    => 'ESMTP',
+		sender      => 'dmo@dmo.ca',
+		recipients  => [ 'dmo@roaringpenguin.com' ],
+	});
+
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+
+	my @headers = (
+		'From: foobar',
+		'To: someone',
+		'Date: Wed, 07 Nov 2007 14:54:33 -0500',
+		"X-Already-Split: This is the song that doesn't end.  It just goes on and on, my friends.\n\tSome people started singing it not knowing what it was\n\tand they'll continue singing it forever just because...",
+		'X-Bottles-Of-Beer: ' . join(', ', map { $_ = 100 - $_; "$_ bottles of beer on the wall" } 1..99 ),
+	);
+
+	$qf->set_headers(join("\n", @headers));
+
+
+	$qf->write();
+
+	ok( $qf->sync, 'sync() succeeded');
+
+	ok( $qf->close, 'close() succeeded' );
+
+	my $expected = <<'END';
+V6
+T1234567890
+K0
+N0
+P30000
+F
+$rESMTP
+${daemon_flags}
+S<dmo@dmo.ca>
+C:<dmo@roaringpenguin.com>
+rRFC822; dmo@roaringpenguin.com
+RPFD:dmo@roaringpenguin.com
+H??From: foobar
+H??To: someone
+H??Date: Wed, 07 Nov 2007 14:54:33 -0500
+H??X-Already-Split: This is the song that doesn't end.  It just goes on and on, my friends.
+	Some people started singing it not knowing what it was
+	and they'll continue singing it forever just because...
+H??X-Bottles-Of-Beer: 99 bottles of beer on the wall, 98 bottles of beer on the wall, 97 bottles of beer on the wall, 96 bottles of beer on the wall, 95 bottles of beer on the wall, 94 bottles of beer on the wall, 93 bottles of beer on the wall, 92 bottles of beer on the wall, 91 bottles of beer on the wall, 90 bottles of beer on the wall, 89 bottles of beer on the wall, 88 bottles of beer on the wall, 87 bottles of beer on the wall, 86 bottles of beer on the wall, 85 bottles of beer on the wall, 84 bottles of beer on the wall, 83 bottles of beer on the wall, 82 bottles of beer on the wall, 81 bottles of beer on the wall, 80 bottles of beer on the wall, 79 bottles of beer on the wall, 78 bottles of beer on the wall, 77 bottles of beer on the wall, 76 bottles of beer on the wall, 75 bottles of beer on the wall, 74 bottles of beer on the wall, 73 bottles of beer on the wall, 72 bottles of beer on the wall, 71 bottles of beer on the wall, 70 bottles of beer on the wall, 69 bottles of beer
+	on the wall, 68 bottles of beer on the wall, 67 bottles of beer on the wall, 66 bottles of beer on the wall, 65 bottles of beer on the wall, 64 bottles of beer on the wall, 63 bottles of beer on the wall, 62 bottles of beer on the wall, 61 bottles of beer on the wall, 60 bottles of beer on the wall, 59 bottles of beer on the wall, 58 bottles of beer on the wall, 57 bottles of beer on the wall, 56 bottles of beer on the wall, 55 bottles of beer on the wall, 54 bottles of beer on the wall, 53 bottles of beer on the wall, 52 bottles of beer on the wall, 51 bottles of beer on the wall, 50 bottles of beer on the wall, 49 bottles of beer on the wall, 48 bottles of beer on the wall, 47 bottles of beer on the wall, 46 bottles of beer on the wall, 45 bottles of beer on the wall, 44 bottles of beer on the wall, 43 bottles of beer on the wall, 42 bottles of beer on the wall, 41 bottles of beer on the wall, 40 bottles of beer on the wall, 39 bottles of beer on the wall, 38 bottles of beer on
+	the wall, 37 bottles of beer on the wall, 36 bottles of beer on the wall, 35 bottles of beer on the wall, 34 bottles of beer on the wall, 33 bottles of beer on the wall, 32 bottles of beer on the wall, 31 bottles of beer on the wall, 30 bottles of beer on the wall, 29 bottles of beer on the wall, 28 bottles of beer on the wall, 27 bottles of beer on the wall, 26 bottles of beer on the wall, 25 bottles of beer on the wall, 24 bottles of beer on the wall, 23 bottles of beer on the wall, 22 bottles of beer on the wall, 21 bottles of beer on the wall, 20 bottles of beer on the wall, 19 bottles of beer on the wall, 18 bottles of beer on the wall, 17 bottles of beer on the wall, 16 bottles of beer on the wall, 15 bottles of beer on the wall, 14 bottles of beer on the wall, 13 bottles of beer on the wall, 12 bottles of beer on the wall, 11 bottles of beer on the wall, 10 bottles of beer on the wall, 9 bottles of beer on the wall, 8 bottles of beer on the wall, 7 bottles of beer on the
+	wall, 6 bottles of beer on the wall, 5 bottles of beer on the wall, 4 bottles of beer on the wall, 3 bottles of beer on the wall, 2 bottles of beer on the wall, 1 bottles of beer on the wall
+.
+END
+
+	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+
+}
+
 __PACKAGE__->runtests unless caller();

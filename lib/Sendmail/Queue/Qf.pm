@@ -14,7 +14,6 @@ use Mail::Header::Generator ();
 ## no critic 'ProhibitMagicNumbers'
 
 # TODO: testcases:
-#  - header lines too long
 #  - 8-bit body handling
 #  - total size of headers > 32768 bytes
 #  - weird/missing sender and recipient addresses
@@ -624,43 +623,49 @@ sub _format_headers
 {
 	my ($self) = @_;
 
-	my $out;
+	my @headers;
 
 	# Ensure we prepend our generated received header, if it
 	# exists.
 	foreach my $line ( split(/\n/, $self->get_received_header || ''), split(/\n/, $self->get_headers) ) {
-		# TODO: proper wrapping of header lines at max length
 		# Sendmail will happily deal with over-length lines in
 		# a queue file when transmitting, by breaking each line
 		# after 998 characters (to allow for \r\n under the
 		# 1000 character RFC limit) and splitting into a new
-		# line.  We may wish to do this ourselves in a
-		# nicer way, perhaps by adding a continuation \n\t at
-		# the first whitespace before 998 characters.
-
-		# It doesn't appear that we need to escape any possible
-		# ${whatever} macro expansion in H?? lines, based on
-		# tests using 8.13.8 queue files.
-
-		# We do not want any delivery-agent flags between ??.
-		# Even Return-Path, which ordinarily has ?P?, we shall
-		# ignore flags for, as we want to pass on every header
-		# that we originally received.
-		if( $line =~ /^\s/ ) {
-			# Handle already-wrapped lines properly, by
-			# appending them as-is.  Wrapped lines can
-			# begin with any whitespace, but it's most
-			# commonly a tab.
-			$out .= "$line\n";
+		# line.  This is ugly and breaks headers, so we do it nicely by
+		# adding a continuation \n\t at the first whitespace before 998
+		# characters.
+		# FUTURE: Note that this fails miserably if there is _no_ whitespace in the header.
+		if( length($line) > 998 ) {
+			my @tokens = split(/ /, $line);
+			my $new_line = shift @tokens;
+			foreach my $token (@tokens) {
+				if( length($new_line) + length($token) + 1 < 998 ) {
+					$new_line .= " $token";
+				} else {
+					push @headers, $new_line;
+					$new_line = "\t$token";
+				}
+			}
+			push @headers, $new_line;
 		} else {
-			$out .=  "H??$line\n";
+			push @headers, $line;
 		}
 	}
 
-	# Don't want a trailing newline
-	chomp $out;
-
-	return $out;
+	# It doesn't appear that we need to escape any possible
+	# ${whatever} macro expansion in H?? lines, based on
+	# tests using 8.13.8 queue files.
+	#
+	# We do not want any delivery-agent flags between ??.
+	# Even Return-Path, which ordinarily has ?P?, we shall
+	# ignore flags for, as we want to pass on every header
+	# that we originally received.
+	return join("\n",
+		# Handle already-wrapped lines properly, by appending them
+		# as-is (no H?? prepend).  Wrapped lines can begin with any
+		# whitespace, but it's most commonly a tab.
+		map { /^\s/ ? $_ : "H??$_" } @headers);
 }
 
 sub _format_end_of_qf
