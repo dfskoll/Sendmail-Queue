@@ -214,8 +214,6 @@ A UNIX seconds-since-epoch timestamp.  If omitted, defaults to current time.
 
 On error, this method may die() with a number of different runtime errors.
 
-TODO: document the possible errors
-
 =cut
 
 # FUTURE: use an exception class?
