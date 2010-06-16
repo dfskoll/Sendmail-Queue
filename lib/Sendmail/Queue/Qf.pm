@@ -389,12 +389,12 @@ sub sync
 
 =head2 close ( )
 
-Returns true on success, false (as undef) if filehandle doesn't exist
-or wasn't open, and dies if closing the filehandle fails.
+Returns true on success, false (as undef) if filehandle wasn't open, or if
+closing the filehandle fails, and dies if the internal filehandle is missing or
+isn't a filehandle.
 
 =cut
 
-# TODO: toss exceptions for everything?
 sub close
 {
 	my ($self) = @_;
@@ -402,7 +402,7 @@ sub close
 	my $fh = $self->get_queue_fh;
 
 	if( ! ($fh && blessed $fh && $fh->isa('IO::Handle')) ) {
-		return undef;
+		croak "get_queue_fh() returned something that isn't a filehandle";
 	}
 
 	if( ! $fh->opened ) {
@@ -410,7 +410,7 @@ sub close
 	}
 
 	if( ! $fh->close ) {
-		croak "Couldn't close filehandle: $!";
+		return undef;
 	}
 
 	return 1;
