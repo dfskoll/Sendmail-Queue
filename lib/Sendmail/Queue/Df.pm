@@ -183,11 +183,6 @@ sub write
 		die qq{File $filepath could not be created: $!};
 	}
 
-	# TODO: do we actually need to lock the df file?
-	if( ! flock $fh, LOCK_EX | LOCK_NB ) {
-		die qq{Couldn't lock $filepath: $!};
-	}
-
 	if( ! $fh->print( $self->get_data ) ) {
 		die qq{Couldn't print to $filepath: $!};
 	}

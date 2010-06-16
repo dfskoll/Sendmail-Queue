@@ -382,7 +382,7 @@ sub queue_multiple
 	my %results;
 
 	# Now, loop over all of the rest
-	# TODO: validate data in the envelopes sections?
+	# FUTURE: validate data in the envelopes sections?
 	eval {
 		while( my($env_name, $env_data) = each %{ $args->{envelopes} } ) {
 			my $cur_qf = $qf->clone();
@@ -461,7 +461,6 @@ sub sync
 	# the fileno we get from that glob.
 	# FUTURE: File::Sync::fsync() can sync directories directly, but isn't core perl.
 	# TODO: this needs testing on solaris and bsd
-	# TODO: this needs testing on other versions of Perl (5.10?)
 	my $directory = $self->{_df_directory};
 
 	sysopen(DIR_FH, $directory, O_RDONLY) or die qq{Couldn't sysopen $directory: $!};
