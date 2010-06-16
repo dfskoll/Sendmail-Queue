@@ -180,18 +180,21 @@ sub create_and_lock
 		my $qid  = _fill_template($tmpl, $seq);
 		my $path = File::Spec->catfile( $self->{queue_directory}, "qf$qid" );
 
-		# TODO: make sure a queue run won't delete it if empty
-		# and unlocked.
-		# TODO: also, if queue runner locks before reading, we
-		# could fail our lock.  More testing!
-		# Also, document what Sendmail does in that case, so we
-		# don't forget it in 3 months...
 		my $old_umask = umask(002);
 		my $fh = IO::File->new( $path, O_RDWR|O_CREAT|O_EXCL );
 		umask($old_umask);
 		if( $fh ) {
 			if( ! flock $fh, LOCK_EX | LOCK_NB ) {
-				die qq{Couldn't lock $path: $!};
+				# Opened but couldn't lock.  This means we probably had:
+				# A: open (us, create)
+				# B: open (them, for read)
+				# B: lock (them, for read)
+				# A: lock (us, failed)
+				# so, give up on this one and try again
+				close($fh);
+				unlink($path);
+				$seq = ($seq + 1) % 3600;
+				next;
 			}
 			$self->set_queue_id( $qid );
 			$self->set_queue_fh( $fh  );
