@@ -540,9 +540,8 @@ sub _format_flag_bits
 {
 	my ($self) = @_;
 
-	# TODO: we actually write a V6 queue file now!  Fix!
 	my $flags = '';
-	# Possible flag bits for V8 queue file:
+	# Possible flag bits for V6 queue file:
 	# 	8 = Body has 8-bit data (EF_HAS8BIT)
 	# 		- This should be set if the body contains any
 	# 		  octets with the high bit set.  This can be detected
