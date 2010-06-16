@@ -1,33 +1,35 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
+use Sendmail::Queue;
 
 my $sender;
-while(my $arg = shift @ARGV) {
+while (my $arg = shift @ARGV) {
 	last if $arg =~ /^--$/;
 
-	if( $arg =~ /^-f(.*)/ ) {
+	if($arg =~ /^-f(.*)/) {
 		$sender = $1;
 	}
 }
 
 my @recipients = @ARGV;
+my $data       = do { local $/; <STDIN> };
 
-my $data = do { local $/; <STDIN> };
+my @queue_directories = qw(
+	/var/spool/mqueue-client
+	/var/spool/clientmqueue
+);
 
-use Sendmail::Queue;
+my ($dir) = grep { -d $_ && -x _ && -w _ } @queue_directories;
 
-# FIXME: This queue directory is Debian-specific.
-# FUTURE: Do we want to try the common client mqueue
-# locations to make it work on more distros?
-my $queue = Sendmail::Queue->new({
-	queue_directory => '/var/spool/mqueue-client',
-});
+die('Could not find a writeable queue directory in ' . join(',', @queue_directories)) unless $dir;
+
+my $queue = Sendmail::Queue->new({ queue_directory => $dir, });
 
 my $qid = $queue->queue_message({
-	sender => $sender,
+	sender     => $sender,
 	recipients => \@recipients,
-	data => $data,
+	data       => $data,
 });
 
 print "Queued as $qid\n";
