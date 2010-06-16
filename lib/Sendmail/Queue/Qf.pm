@@ -156,7 +156,9 @@ intermediate tf file and renaming aftewards.  This is all good and well
 for creating /new/ qf files -- sendmail does it that way as well -- but
 if we ever want to rewrite one, it's not safe.
 
-FIXME: Are you *sure* it's safe to create the qf directly?
+For future reference, Sendmail queuefile creation in queueup() inside
+sendmail/queue.c does things in the same way -- newly-created queue files
+are created directly with the qf prefix, then locked, then written.
 
 =cut
 
