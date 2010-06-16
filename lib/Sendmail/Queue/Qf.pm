@@ -509,6 +509,20 @@ sub unlink
 
 # Internal methods
 
+sub _clean_email_address
+{
+	my ($self, $addr) = @_;
+
+	# Sanitize $addr a little.  We want to remove any leading/trailing
+	# whitespace, and any < > that might be present
+	# FUTURE: do we want to do any other validation or cleaning of address
+	# here?
+	$addr =~ s/^[<\s]+//;
+	$addr =~ s/[>\s]+$//;
+
+	return $addr;
+}
+
 sub _format_qf_version
 {
 	my ($self) = @_;
@@ -620,7 +634,7 @@ sub _format_sender_address
 	if( ! defined $self->get_sender() ) {
 		die q{No sender address!};
 	}
-	return 'S<' . $self->get_sender() . '>';
+	return 'S<' . $self->_clean_email_address( $self->get_sender() ). '>';
 }
 
 sub _format_headers
@@ -690,20 +704,7 @@ sub _format_recipient_addresses
 	}
 
 	my @out;
-	foreach my $recip ( @{$recips} ) {
-
-		# Sanitize $recip a little before using it.
-		# First, remove any leading/trailing whitespace, and
-		# any < > that might be present already
-		#
-		# TODO: do we need to do any other validation or
-		# cleaning of address here?
-		# TODO: why here, and not for sender?  Should probably
-		# separate this out to a canonicalize() method and do
-		# it for both.  Do it in add_recipient and set_sender
-		# instead.
-		$recip =~ s/^[<\s]+//;
-		$recip =~ s/[>\s]+$//;
+	foreach my $recip ( map { $self->_clean_email_address( $_ ) } @{$recips} ) {
 
 		push @out, "rRFC822; $recip";
 
