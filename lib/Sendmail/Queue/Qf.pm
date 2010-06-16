@@ -410,7 +410,7 @@ sub close
 	}
 
 	if( ! $fh->close ) {
-		croak q{Couldn't close filehandle!};
+		croak "Couldn't close filehandle: $!";
 	}
 
 	return 1;
@@ -598,7 +598,7 @@ sub _format_macros
 
 	my @macros;
 
-	# TODO: we may also want to pass on other macros
+	# FUTURE: we eventually want to pass other macros
 
 	# $r macro - protocol by which message was received
 	my $protocol = $self->get_protocol() || '';
@@ -689,10 +689,7 @@ sub _format_recipient_addresses
 		return;
 	}
 
-	# TODO: consistency - some methods append to string, others
-	# push to array and join.  Use one or the other.
 	my @out;
-
 	foreach my $recip ( @{$recips} ) {
 
 		# Sanitize $recip a little before using it.
@@ -741,11 +738,11 @@ __END__
 
 =head2 Core Perl Modules
 
-L<Carp>, L<File::Spec>
+L<Carp>, L<File::Spec>, L<Scalar::Util>, L<Time::Local>, L<Fcntl>, L<Errno>
 
 =head2 Other Modules
 
-L<Class::Accessor::Fast>
+L<Class::Accessor::Fast>, L<Mail::Header::Generator>
 
 =head1 INCOMPATIBILITIES
 

@@ -241,9 +241,11 @@ __END__
 
 =head2 Core Perl Modules
 
-L<Carp>, L<Scalar::Util>
+L<Carp>, L<Scalar::Util>, L<File::Spec>, L<IO::File>, L<Fcntl>
 
 =head2 Other Modules
+
+L<Class::Accessor::Fast>
 
 =head1 INCOMPATIBILITIES
 

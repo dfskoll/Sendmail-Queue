@@ -215,9 +215,10 @@ A UNIX seconds-since-epoch timestamp.  If omitted, defaults to current time.
 On error, this method may die() with a number of different runtime errors.
 
 TODO: document the possible errors
-TODO: use exceptions??
 
 =cut
+
+# FUTURE: use an exception class?
 
 sub queue_message
 {
@@ -458,6 +459,7 @@ sub sync
 	#     IO::Handle->sync
 	# so, we have to sysopen to a filehandle glob, and then fdopen
 	# the fileno we get from that glob.
+	# FUTURE: File::Sync::fsync() can sync directories directly, but isn't core perl.
 	# TODO: this needs testing on solaris and bsd
 	# TODO: this needs testing on other versions of Perl (5.10?)
 	my $directory = $self->{_df_directory};
@@ -482,13 +484,11 @@ __END__
 
 =head2 Core Perl Modules
 
-L<Carp>
-
-# TODO list other core perl modules
+L<Carp>, L<File::Spec>, L<IO::Handle>, L<Fcntl>
 
 =head2 Other Modules
 
-# TODO we shouldn't have non-core dependencies!  Check!
+L<Sendmail::Queue::Qf>, L<Sendmail::Queue::Df>
 
 =head1 INCOMPATIBILITIES
 
