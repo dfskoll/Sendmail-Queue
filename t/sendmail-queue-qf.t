@@ -337,4 +337,34 @@ END
 
 }
 
+sub write_qf_exceptions : Test(5)
+{
+	my ($self) = @_;
+
+	my $qf = Sendmail::Queue::Qf->new({
+		timestamp       => 1234567890,
+		queue_directory => $self->{tmpdir},
+		protocol    => 'ESMTP',
+		recipients  => [ 'dmo@roaringpenguin.com' ],
+	});
+
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+
+	my @headers = (
+		'From: foobar',
+		'To: someone',
+		'Date: Wed, 07 Nov 2007 14:54:33 -0500',
+	);
+
+	$qf->set_headers(join("\n", @headers));
+
+	throws_ok { $qf->write() } qr/Cannot queue a message with no sender address/, 'Dies as expected when no sender provided';
+
+	ok( $qf->unlink(), 'Unlinked previous attempt to write');
+	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
+	$qf->set_sender('dmo@roaringpenguin.com');
+	$qf->set_recipients([]);
+	throws_ok { $qf->write() } qr/Cannot queue a message with no recipient addresses/, 'Dies as expected when no recipients provided';
+}
+
 __PACKAGE__->runtests unless caller();

@@ -14,9 +14,7 @@ use Mail::Header::Generator ();
 ## no critic 'ProhibitMagicNumbers'
 
 # TODO: testcases:
-#  - 8-bit body handling
 #  - total size of headers > 32768 bytes
-#  - weird/missing sender and recipient addresses
 #  - streaming multiple copies as fast as possible
 
 use base qw(Class::Accessor::Fast);
@@ -632,7 +630,7 @@ sub _format_sender_address
 	my ($self) = @_;
 
 	if( ! defined $self->get_sender() ) {
-		die q{No sender address!};
+		die q{Cannot queue a message with no sender address};
 	}
 	return 'S<' . $self->_clean_email_address( $self->get_sender() ). '>';
 }
@@ -700,7 +698,7 @@ sub _format_recipient_addresses
 
 	my $recips = $self->get_recipients();
 	if( scalar @$recips < 1 ) {
-		return;
+		die q{Cannot queue a message with no recipient addresses};
 	}
 
 	my @out;
