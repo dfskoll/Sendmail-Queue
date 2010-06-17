@@ -356,10 +356,10 @@ sub queue_multiple
 		queue_directory => $self->{_qf_directory}
 	});
 
-	# FUTURE: Maybe a regex is faster?  We only care about
-	# the existence of at least on 8-bit character, not the
-	# total count as returned by tr//
-	if( $data =~ tr/\200-\377// ) {
+	# m// match is faster than tr/// for any case where there's an 8-bit
+	# character before the end of the file, and is not significantly
+	# slower in the case of no 8-bit characters.
+	if( $data =~ m/[\200-\377]/o ) {
 		# EF_HAS8BIT flag bit gets set if we have 8 bit characters in body.
 		$qf->set_data_is_8bit(1);
 	}
