@@ -13,9 +13,7 @@ use Mail::Header::Generator ();
 
 ## no critic 'ProhibitMagicNumbers'
 
-# TODO: testcases:
-#  - total size of headers > 32768 bytes
-#  - streaming multiple copies as fast as possible
+# TODO: should we fail if total size of headers > 32768 bytes, or let sendmail die?
 
 use base qw(Class::Accessor::Fast);
 __PACKAGE__->follow_best_practice;

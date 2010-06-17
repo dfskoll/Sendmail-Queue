@@ -1,8 +1,37 @@
 Revision history for Sendmail-Queue
 
+0.200	Thu, 17 Jun 2010 16:14:20 -0400	(dmo)
+
+  * Sendmail::Queue::Qf::write() (and thus Sendmail::Queue's queue_message()
+    and queue_multiple()) will now fail if there is no sender or no recipients.
+
+  * Sendmail::Queue::queue_multiple() is now all-or-nothing.  If any queueing
+    attempt fails, the other envelopes queued for that message are removed if
+    possible.
+
+  * df file is no longer locked -- it's unnecessary.
+
+  * Better handling of potential race conditions between this code and a
+    Sendmail queue runner.
+
+  * Errors on sync() and close() are now trapped so we can clean up afterwards.
+
+  * bin/sendmail example now tries to guess correct queue directory.
+
+  * We no longer create a C-line in the qf file, as it's unnecessary.
+
+  * Headers longer than 998 characters are now wrapped at the nearest
+    whitespace when written to the qf file, if the caller has not already done
+    so.
+
+  * Flags for 8-bit data are properly set by Sendmail::Queue, and can be set
+    explicitly on Sendmail::Queue::Qf objects.
+
 0.100	Fri, 04 Jun 2010 15:39:35 -0400
-	Now uses Mail::Header::Generator for generating received header
+
+  * Now uses Mail::Header::Generator for generating received header
 
 0.01    Thu, 1 Nov 2007 16:14 -0400
-        First version, released on an unsuspecting world.
+
+  * First version, released on an unsuspecting world.
 
