@@ -8,7 +8,6 @@ requires 'File::Spec';
 requires 'IO::File';
 requires 'Scalar::Util';
 requires 'Time::Local';
-requires 'Class::Accessor::Fast';
 requires 'Mail::Header::Generator';
 
 build_requires 'Test::Most';

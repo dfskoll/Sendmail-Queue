@@ -15,9 +15,9 @@ use Mail::Header::Generator ();
 
 # TODO: should we fail if total size of headers > 32768 bytes, or let sendmail die?
 
-use base qw(Class::Accessor::Fast);
-__PACKAGE__->follow_best_practice;
-__PACKAGE__->mk_accessors( qw(
+use Sendmail::Queue::Base;
+our @ISA = qw( Sendmail::Queue::Base );
+__PACKAGE__->make_accessors(qw(
 	queue_id
 	queue_fh
 	queue_directory
@@ -35,7 +35,7 @@ __PACKAGE__->mk_accessors( qw(
 	priority
 	qf_version
 	data_is_8bit
-) );
+));
 
 =head1 NAME
 
@@ -730,7 +730,6 @@ sub _format_recipient_addresses
 1;
 __END__
 
-
 =head1 DEPENDENCIES
 
 =head2 Core Perl Modules
@@ -739,7 +738,7 @@ L<Carp>, L<File::Spec>, L<Scalar::Util>, L<Time::Local>, L<Fcntl>, L<Errno>
 
 =head2 Other Modules
 
-L<Class::Accessor::Fast>, L<Mail::Header::Generator>
+L<Mail::Header::Generator>
 
 =head1 INCOMPATIBILITIES
 

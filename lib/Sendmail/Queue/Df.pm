@@ -9,9 +9,9 @@ use Fcntl qw( :flock );
 
 use Scalar::Util qw( blessed );
 
-use base qw(Class::Accessor::Fast);
-__PACKAGE__->follow_best_practice;
-__PACKAGE__->mk_accessors( qw(
+use Sendmail::Queue::Base;
+our @ISA = qw( Sendmail::Queue::Base );
+__PACKAGE__->make_accessors( qw(
 	queue_id
 	queue_directory
 	data
@@ -237,10 +237,6 @@ __END__
 =head2 Core Perl Modules
 
 L<Carp>, L<Scalar::Util>, L<File::Spec>, L<IO::File>, L<Fcntl>
-
-=head2 Other Modules
-
-L<Class::Accessor::Fast>
 
 =head1 INCOMPATIBILITIES
 

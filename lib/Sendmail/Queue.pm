@@ -367,7 +367,8 @@ sub queue_multiple
 	# Allow passing of optional info down to Qf object
 	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
 		if( exists $args->{$optarg} ) {
-			$qf->set( $optarg, $args->{$optarg} );
+			my $method = 'set_' . $optarg;
+			$qf->$method($args->{$optarg} );
 		}
 	}
 

@@ -9,6 +9,7 @@ inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/Sendmail/Queue.pm
+lib/Sendmail/Queue/Base.pm
 lib/Sendmail/Queue/Df.pm
 lib/Sendmail/Queue/Qf.pm
 Makefile.PL
