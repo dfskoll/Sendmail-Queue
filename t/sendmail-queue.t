@@ -10,6 +10,9 @@ use File::Slurp;
 
 use Sendmail::Queue;
 
+# Override $USER to make testing easier
+local $ENV{USER} = 'localuser';
+
 sub make_tmpdir : Test(setup)
 {
 	my ($self) = @_;
@@ -75,7 +78,7 @@ rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
-H\?\?Received: \(from dmo\@localhost\)
+H\?\?Received: \(from localuser\@localhost\)
 	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
@@ -155,7 +158,7 @@ rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
-H\?\?Received: \(from dmo\@localhost\)
+H\?\?Received: \(from localuser\@localhost\)
 	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
@@ -176,7 +179,7 @@ rRFC822; foo\@roaringpenguin.com
 RPFD:foo\@roaringpenguin.com
 rRFC822; bar\@roaringpenguin.com
 RPFD:bar\@roaringpenguin.com
-H\?\?Received: \(from dmo\@localhost\)
+H\?\?Received: \(from localuser\@localhost\)
 	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
@@ -354,7 +357,7 @@ rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
-H\?\?Received: \(from dmo\@localhost\)
+H\?\?Received: \(from localuser\@localhost\)
 	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
