@@ -214,6 +214,8 @@ sub queue_message_failure : Test(4)
 {
 	my ($self) = @_;
 
+	return 'Skipping test -- root ignores directory permissions' if ($> == 0);
+
 	my $queue = Sendmail::Queue->new({
 		queue_directory => $self->{tmpdir}
 	});
