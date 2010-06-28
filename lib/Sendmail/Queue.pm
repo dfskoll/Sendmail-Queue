@@ -4,7 +4,7 @@ use warnings;
 use Carp;
 use 5.8.0;
 
-our $VERSION = '0.200';
+our $VERSION = '0.300';
 
 use Sendmail::Queue::Qf;
 use Sendmail::Queue::Df;
