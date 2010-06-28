@@ -32,7 +32,7 @@ __END__
 
 =head1 NAME
 
-Sendmail::Queue::Base - Base class for Sendmail::Queue::{Df,Qf} objects
+Sendmail::Queue::Base - Base class for Sendmail::Queue's objects
 
 =head1 SYNOPSIS
 

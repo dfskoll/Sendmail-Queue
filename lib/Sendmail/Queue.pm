@@ -12,6 +12,14 @@ use File::Spec;
 use IO::Handle;
 use Fcntl;
 
+use Sendmail::Queue::Base;
+our @ISA = qw( Sendmail::Queue::Base );
+__PACKAGE__->make_accessors(qw(
+	queue_directory
+	qf_directory
+	df_directory
+));
+
 =head1 NAME
 
 Sendmail::Queue - Manipulate Sendmail queues directly
@@ -116,28 +124,28 @@ sub new
 
 	$args ||= {};
 
-	if( ! exists $args->{queue_directory} ) {
+	if(!exists $args->{queue_directory}) {
 		die q{queue_directory argument must be provided};
 	}
 
-	my $self = {
-		queue_directory => $args->{queue_directory},
-	};
-
+	my $self = { queue_directory => $args->{queue_directory}, };
 
 	bless $self, $class;
 
-	if( ! -d $self->{queue_directory} ) {
+	if(!-d $self->{queue_directory}) {
 		die q{ Queue directory doesn't exist};
 	}
 
-	if( -d File::Spec->catfile($self->{queue_directory},'qf')
- 	    && -d File::Spec->catfile($self->{queue_directory},'df') ) {
-		$self->{_qf_directory} = File::Spec->catfile($self->{queue_directory},'qf');
-		$self->{_df_directory} = File::Spec->catfile($self->{queue_directory},'df');
+	if(-d File::Spec->catfile($self->{queue_directory}, 'qf')) {
+		$self->set_qf_directory(File::Spec->catfile($self->{queue_directory}, 'qf'));
 	} else {
-		$self->{_qf_directory} = $self->{queue_directory};
-		$self->{_df_directory} = $self->{queue_directory};
+		$self->set_qf_directory(File::Spec->catfile($self->{queue_directory}));
+	}
+
+	if(-d File::Spec->catfile($self->{queue_directory}, 'df')) {
+		$self->set_df_directory(File::Spec->catfile($self->{queue_directory}, 'df'));
+	} else {
+		$self->set_df_directory(File::Spec->catfile($self->{queue_directory}));
 	}
 
 	return $self;
@@ -353,7 +361,7 @@ sub queue_multiple
 	my ($headers, $data) = split(/\n\n/, $args->{data}, 2);
 
 	my $qf = Sendmail::Queue::Qf->new({
-		queue_directory => $self->{_qf_directory}
+		queue_directory => $self->get_qf_directory(),
 	});
 
 	# m// match is faster than tr/// for any case where there's an 8-bit
@@ -405,7 +413,7 @@ sub queue_multiple
 			$cur_qf->sync();
 
 			my $cur_df = Sendmail::Queue::Df->new({
-				queue_directory => $self->{_df_directory},
+				queue_directory => $self->get_df_directory(),
 				queue_id        => $cur_qf->get_queue_id(),
 			});
 			if( ! $first_df ) {
@@ -431,7 +439,7 @@ sub queue_multiple
 		# Something bad happened... wrap it all up and re-throw
 		for my $qf (@queued_qfs) {
 			my $df = Sendmail::Queue::Df->new({
-				queue_directory => $self->{_df_directory},
+				queue_directory => $self->get_df_directory(),
 				queue_id        => $qf->get_queue_id(),
 			});
 			$df->unlink;
@@ -460,7 +468,7 @@ sub sync
 	# the fileno we get from that glob.
 	# FUTURE: File::Sync::fsync() can sync directories directly, but isn't core perl.
 	# TODO: this needs testing on solaris and bsd
-	my $directory = $self->{_df_directory};
+	my $directory = $self->get_df_directory();
 
 	sysopen(DIR_FH, $directory, O_RDONLY) or die qq{Couldn't sysopen $directory: $!};
 

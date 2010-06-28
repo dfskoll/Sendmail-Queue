@@ -36,6 +36,28 @@ sub test_constructor : Test(1)
 	isa_ok( $q, 'Sendmail::Queue');
 }
 
+sub test_accessors : Test(6)
+{
+	my ($self) = @_;
+
+	my $q = Sendmail::Queue->new({
+		queue_directory => $self->{tmpdir}
+	});
+	is( $q->get_queue_directory(), $self->{tmpdir}, 'get_queue_directory' );
+	is( $q->get_qf_directory(),    $self->{tmpdir}, 'get_qf_directory' );
+	is( $q->get_df_directory(),    $self->{tmpdir}, 'get_df_directory' );
+
+	mkdir("$self->{tmpdir}/qf");
+	mkdir("$self->{tmpdir}/df");
+
+	$q = Sendmail::Queue->new({
+		queue_directory => $self->{tmpdir}
+	});
+	is( $q->get_queue_directory(), $self->{tmpdir},      'get_queue_directory' );
+	is( $q->get_qf_directory(),    "$self->{tmpdir}/qf", 'get_qf_directory' );
+	is( $q->get_df_directory(),    "$self->{tmpdir}/df", 'get_df_directory' );
+}
+
 sub queue_message : Test(4)
 {
 	my ($self) = @_;
