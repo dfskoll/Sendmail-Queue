@@ -35,6 +35,7 @@ __PACKAGE__->make_accessors(qw(
 	priority
 	qf_version
 	data_is_8bit
+	user
 ));
 
 =head1 NAME
@@ -261,18 +262,23 @@ sub synthesize_received_header
 
 	my $g = Mail::Header::Generator->new();
 
+	my $user = $self->get_user();
+	if(!$user) {
+		$user = getpwuid($>);
+	}
+
 	$self->{received_header} = $g->received({
-		helo => $self->get_helo(),
-		hostname => $self->get_local_hostname(),
-		product_name => $self->get_product_name(),
-		protocol => ($self->get_protocol || ''),
-		queue_id  => $self->get_queue_id(),
-		recipients => $self->get_recipients(),
-		relay_address => $self->get_relay_address(),
+		helo           => $self->get_helo(),
+		hostname       => $self->get_local_hostname(),
+		product_name   => $self->get_product_name(),
+		protocol       => ($self->get_protocol || ''),
+		queue_id       => $self->get_queue_id(),
+		recipients     => $self->get_recipients(),
+		relay_address  => $self->get_relay_address(),
 		relay_hostname => $self->get_relay_hostname(),
-		sender   => $self->get_sender(),
-		timestamp => $self->get_timestamp(),
-		user => $ENV{USER},
+		sender         => $self->get_sender(),
+		timestamp      => $self->get_timestamp(),
+		user           => $user
 	});
 
 	return $self->{received_header};

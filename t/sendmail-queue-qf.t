@@ -16,8 +16,7 @@ BEGIN {
 	eval 'require Sendmail::Queue::Qf' or die $@;
 };
 
-# Override $USER to make testing easier
-local $ENV{USER} = 'localuser';
+my $USER = getpwuid($>);
 
 sub make_tmpdir : Test(setup)
 {
@@ -193,7 +192,7 @@ sub generate_received : Test(3)
 
 	# First, try it with no values set.
 	$qf->synthesize_received_header();
-	my $r_hdr = qr/^Received: \(from localuser\@localhost\)\n\tby localhost \(Sendmail::Queue\) id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	my $r_hdr = qr/^Received: \(from $USER\@localhost\)\n\tby localhost \(Sendmail::Queue\) id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500$/;
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 
 	# Wipe and try again
