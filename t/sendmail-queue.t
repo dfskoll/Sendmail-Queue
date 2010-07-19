@@ -100,7 +100,7 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
@@ -180,7 +180,7 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
@@ -201,7 +201,7 @@ RPFD:foo\@roaringpenguin.com
 rRFC822; bar\@roaringpenguin.com
 RPFD:bar\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
@@ -381,7 +381,7 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender dmo\@dmo\.ca\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
 H\?\?From: foobar
 H\?\?To: someone
 H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
