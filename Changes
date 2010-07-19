@@ -1,5 +1,9 @@
 Revision history for Sendmail-Queue
 
+0.302	Mon, 19 Jul 2010 11:35:41 -0400 (dmo)
+
+  * Cleanups to Received: header generation
+
 0.301	Mon, 28 Jun 2010 16:34:05 -0400	(dmo)
 
   * Implement accessors for queue_directory, qf_directory and df_directory
