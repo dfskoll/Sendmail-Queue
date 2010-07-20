@@ -10,6 +10,7 @@ use Time::Local ();
 use Fcntl qw( :flock );
 use Errno qw( EEXIST );
 use Mail::Header::Generator ();
+use Storable ();
 
 ## no critic 'ProhibitMagicNumbers'
 
@@ -437,32 +438,27 @@ Return a clone of this Sendmail::Queue::Qf object, containing everything EXCEPT:
 =back
 
 =cut
-my %skip_for_clone = (
-	sender => 1,
-	received_header => 1,
-	recipients => 1,
-	queue_id   => 1,
-	queue_fh   => 1,
-);
 
 sub clone
 {
 	my ($self) = @_;
 
-	my $clone = Sendmail::Queue::Qf->new();
+	# Localize queue_fh first, as dclone() chokes on GLOB values, and we
+	# don't want it cloned anyway.
+	local $self->{queue_fh};
 
+	my $clone = Storable::dclone( $self );
 
-	my @keys = keys %{ $self };
-
-	foreach my $key (@keys) {
-		next if exists $skip_for_clone{$key};
-		$clone->{$key} = $self->{$key};
-	}
+	# Now clobber the values that shouldn't persist across a clone.  We
+	# set_recipients to [] as that's what the constructor does, and delete
+	# the rest.
+	$clone->set_recipients([]);
+	delete $clone->{$_} for qw( sender queue_id received_header queue_fh );
 
 	return $clone;
 }
 
-=head2 unlink ( ) 
+=head2 unlink ( )
 
 Unlink the queue file.  Returns true (1) on success, false (undef) on
 failure.
@@ -475,7 +471,7 @@ Unlinking the queue file will only succeed if:
 
 we have a queue directory and queue ID configured for this object
 
-=item * 
+=item *
 
 the queue file is open and locked
 
@@ -706,7 +702,7 @@ sub _format_end_of_qf
 {
 	my ($self) = @_;
 
-	# Dot signifies end of queue file.  
+	# Dot signifies end of queue file.
 	return '.';
 }
 

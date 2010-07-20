@@ -9,6 +9,7 @@ requires 'IO::File';
 requires 'Scalar::Util';
 requires 'Time::Local';
 requires 'Mail::Header::Generator';
+requires 'Storable';
 
 build_requires 'Test::Most';
 build_requires 'Test::Class';

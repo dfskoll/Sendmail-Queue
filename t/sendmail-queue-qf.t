@@ -214,7 +214,7 @@ sub generate_received : Test(3)
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 }
 
-sub clone_qf_file : Test(9)
+sub clone_qf_file : Test(10)
 {
 	my ($self) = @_;
 
@@ -250,6 +250,8 @@ sub clone_qf_file : Test(9)
 		$clone,
 		noclass(\%expected),
 		'Clone has correct data');
+
+	isnt( $clone->get_macros(), $qf->get_macros(), 'get_macros() on clone returns a different hashref');
 
 	is( $clone->get_sender, undef, 'clone has no sender');
 	cmp_deeply( $clone->get_recipients, [], 'clone has empty recipients');
