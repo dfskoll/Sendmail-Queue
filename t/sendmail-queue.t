@@ -92,8 +92,8 @@ K0
 N0
 P30000
 F
-\$rESMTP
 \${daemon_flags}
+\$rESMTP
 S<dmo\@dmo.ca>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
@@ -172,8 +172,8 @@ K0
 N0
 P30000
 F
-\$rESMTP
 \${daemon_flags}
+\$rESMTP
 S<dmo\@dmo.ca>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com
@@ -193,8 +193,8 @@ K0
 N0
 P30000
 F
-\$rESMTP
 \${daemon_flags}
+\$rESMTP
 S<dmo\@dmo.ca>
 rRFC822; foo\@roaringpenguin.com
 RPFD:foo\@roaringpenguin.com
@@ -373,8 +373,8 @@ K0
 N0
 P30000
 F8
-\$rESMTP
 \${daemon_flags}
+\$rESMTP
 S<dmo\@dmo.ca>
 rRFC822; dmo\@roaringpenguin.com
 RPFD:dmo\@roaringpenguin.com

@@ -36,6 +36,7 @@ __PACKAGE__->make_accessors(qw(
 	qf_version
 	data_is_8bit
 	user
+	macros
 ));
 
 =head1 NAME
@@ -91,6 +92,7 @@ sub new
 		local_hostname => 'localhost',
 		timestamp      => time,
 		priority       => 30000,
+		macros         => {},
 
 		# This code generates V6-compatible qf files to work
 		# with Sendmail 8.12.
@@ -608,25 +610,37 @@ sub _format_flag_bits
 	'F' . $flags;
 }
 
+sub __format_single_macro
+{
+	my ($name, $value) = @_;
+
+	$value = '' unless defined $value;   # //= would be nice, but we have to support 5.8.x
+
+	if( length($name) > 1 ) {
+		return "\${$name}$value";
+	}
+	return "\$$name$value";
+}
+
 sub _format_macros
 {
 	my ($self) = @_;
 
-	my @macros;
+	my $macro_text = '';
 
-	# FUTURE: we eventually want to pass other macros
+	my %macro_hash = %{ $self->get_macros() || {} };
 
-	# $r macro - protocol by which message was received
-	my $protocol = $self->get_protocol() || '';
-	if( $protocol =~ /^e?smtp$/i ) {
-		push @macros, '$r' . uc($protocol);
+	if( ! exists $macro_hash{r} ) {
+		$macro_hash{r} = $self->get_protocol();
 	}
 
 	# ${daemon_flags} macro - shouldn't need any of these, so set a
 	# blank one.
-	push @macros, '${daemon_flags}';
+	$macro_hash{daemon_flags} = '';
 
-	return join("\n", @macros);
+	return join("\n",
+		map { __format_single_macro($_, $macro_hash{$_}) }
+		sort keys %macro_hash);
 }
 
 sub _format_sender_address

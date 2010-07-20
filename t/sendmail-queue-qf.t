@@ -120,8 +120,8 @@ K0
 N0
 P30000
 F
-$rESMTP
 ${daemon_flags}
+$rESMTP
 S<dmo@dmo.ca>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com
@@ -164,8 +164,8 @@ K0
 N0
 P30000
 F8
-$rESMTP
 ${daemon_flags}
+$rESMTP
 S<dmo@dmo.ca>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com
@@ -230,6 +230,7 @@ sub clone_qf_file : Test(9)
 	$qf->set_relay_hostname('broken.dynamic.server.example.com');
 	$qf->set_local_hostname('mail.roaringpenguin.com');
 	$qf->add_recipient('dmo@roaringpenguin.com');
+	$qf->set_macros({ r => 'ESMTP', auth_authen => 'foobar', auth_author => 'foobar@example.com', auth_type => 'DIGEST-MD5' });
 	ok( $qf->create_and_lock, 'Created a qf file with a unique ID');
 
 	$qf->synthesize_received_header();
@@ -317,8 +318,8 @@ K0
 N0
 P30000
 F
-$rESMTP
 ${daemon_flags}
+$rESMTP
 S<dmo@dmo.ca>
 rRFC822; dmo@roaringpenguin.com
 RPFD:dmo@roaringpenguin.com

@@ -218,6 +218,17 @@ SMTP, and ESMTP.  Default is blank.
 
 A UNIX seconds-since-epoch timestamp.  If omitted, defaults to current time.
 
+=item macros
+
+A hash reference containing Sendmail macros that should be set in the resulting
+queue file.
+
+The names of macros should be the bare name, as the module will add the leading
+$ and any surrounding {} necessary for multi-character macro names.
+
+If omitted, the '$r' macro will be set to the 'protocol' value.  Other macros will
+not be set by default.
+
 =back
 
 On error, this method may die() with a number of different runtime errors.
@@ -373,7 +384,7 @@ sub queue_multiple
 	}
 
 	# Allow passing of optional info down to Qf object
-	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp ) {
+	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp macros ) {
 		if( exists $args->{$optarg} ) {
 			my $method = 'set_' . $optarg;
 			$qf->$method($args->{$optarg} );
