@@ -2,7 +2,6 @@ use inc::Module::Install;
 
 name     'Sendmail-Queue';
 all_from 'lib/Sendmail/Queue.pm';
-license  'gpl';
 
 requires 'File::Spec';
 requires 'IO::File';
