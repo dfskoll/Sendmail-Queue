@@ -435,7 +435,18 @@ sub queue_multiple
 				$first_df->write();
 			} else {
 				# Otherwise, link to the first df
-				$cur_df->hardlink_to( $first_df->get_data_filename() );
+				eval { $cur_df->hardlink_to( $first_df->get_data_filename() ); };
+				if ($@) {
+					if ($@ =~ /Path .* does not exist/) {
+						# This should NEVER happen...
+						# but it was observed to happen!
+						$first_df = $cur_df;
+						$first_df->set_data($data);
+						$first_df->write();
+					} else {
+						die($@);
+					}
+				}
 			}
 
 			$results{ $env_name } = $cur_qf->get_queue_id;
