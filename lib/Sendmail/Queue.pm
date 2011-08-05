@@ -440,6 +440,9 @@ sub queue_multiple
 					if ($@ =~ /Path .* does not exist/) {
 						# This should NEVER happen...
 						# but it was observed to happen!
+						# Sorry to spew to STDERR, but there's no
+						# feasible way to log this
+						print STDERR 'Sendmail::Queue warning: ' . $first_df->get_data_filename() . ' has disappeared!  Writing new file as ' . $cur_df->get_data_filename() . "\n";
 						$first_df = $cur_df;
 						$first_df->set_data($data);
 						$first_df->write();
