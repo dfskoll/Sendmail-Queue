@@ -12,6 +12,12 @@ use Errno qw( EEXIST );
 use Mail::Header::Generator ();
 use Storable ();
 
+my $fcntl_struct = 's H60';
+my $fcntl_structlockp = pack($fcntl_struct, Fcntl::F_WRLCK,
+        "000000000000000000000000000000000000000000000000000000000000");
+my $fcntl_structunlockp = pack($fcntl_struct, Fcntl::F_UNLCK,
+        "000000000000000000000000000000000000000000000000000000000000");
+
 ## no critic 'ProhibitMagicNumbers'
 
 # TODO: should we fail if total size of headers > 32768 bytes, or let sendmail die?
@@ -143,10 +149,11 @@ sub new
 	}
 }
 
-=head2 create_and_lock ( )
+=head2 create_and_lock ( [$lock_both] )
 
 Generate a Sendmail 8.12-compatible queue ID, and create a locked qf
-file with that name.
+file with that name.  If $lock_both is true, we lock the file using
+both fcntl and flock-style locking.
 
 See Bat Book 3rd edition, section 11.2.1 for information on how the
 queue file name is generated.
@@ -164,7 +171,7 @@ are created directly with the qf prefix, then locked, then written.
 
 sub create_and_lock
 {
-	my ($self) = @_;
+	my ($self, $lock_both) = @_;
 
 	if( ! -d $self->get_queue_directory ) {
 		die q{Cannot create queue file without queue directory!};
@@ -191,6 +198,13 @@ sub create_and_lock
 				# B: lock (them, for read)
 				# A: lock (us, failed)
 				# so, give up on this one and try again
+				close($fh);
+				unlink($path);
+				$seq = ($seq + 1) % 3600;
+				next;
+			}
+			if ($lock_both && !fcntl($fh, Fcntl::F_SETLK, $fcntl_structlockp)) {
+				# See above... couldn't lock with fcntl
 				close($fh);
 				unlink($path);
 				$seq = ($seq + 1) % 3600;
