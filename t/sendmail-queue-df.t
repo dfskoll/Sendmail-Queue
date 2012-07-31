@@ -5,7 +5,19 @@ use base qw( Test::Class );
 
 use Test::Most;
 use File::Temp;
-use File::Slurp;
+
+sub slurp
+{
+	my ($fname) = @_;
+	my $data;
+	local $/;
+	if (open(SLURP, "<$fname")) {
+		$data = <SLURP>;
+		close(SLURP);
+	}
+	return $data;
+}
+
 
 use Sendmail::Queue::Df;
 
@@ -41,7 +53,7 @@ END
 	$df->set_data( $expected );
 	$df->write();
 
-	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Wrote expected data');
+	is( slurp( $df->get_data_filename ), $expected, 'Wrote expected data');
 }
 
 sub hardlink_df_file : Test(3)
@@ -74,11 +86,11 @@ END
 
 	$df->write();
 
-	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Linked to expected data');
+	is( slurp( $df->get_data_filename ), $expected, 'Linked to expected data');
 
 	unlink $file or die $!;
 
-	is( File::Slurp::slurp( $df->get_data_filename ), $expected, 'Unlinking original causes no problems');
+	is( slurp( $df->get_data_filename ), $expected, 'Unlinking original causes no problems');
 
 
 }

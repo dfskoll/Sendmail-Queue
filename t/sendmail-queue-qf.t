@@ -6,7 +6,18 @@ use base qw( Test::Class );
 
 use Test::Most;
 use File::Temp;
-use File::Slurp;
+
+sub slurp
+{
+	my ($fname) = @_;
+	my $data;
+	local $/;
+	if (open(SLURP, "<$fname")) {
+		$data = <SLURP>;
+		close(SLURP);
+	}
+	return $data;
+}
 
 
 # fake rand() to always return 0 for testing purposes.
@@ -131,7 +142,7 @@ H??Date: Wed, 07 Nov 2007 14:54:33 -0500
 .
 END
 
-	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+	is( slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
 
 }
 
@@ -175,7 +186,7 @@ H??Date: Wed, 07 Nov 2007 14:54:33 -0500
 .
 END
 
-	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+	is( slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
 
 }
 
@@ -338,7 +349,7 @@ H??X-Bottles-Of-Beer: 99 bottles of beer on the wall, 98 bottles of beer on the 
 .
 END
 
-	is( File::Slurp::slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
+	is( slurp( $qf->get_queue_filename ), $expected, 'Wrote expected data');
 
 }
 

@@ -6,7 +6,18 @@ use base qw( Test::Class );
 
 use Test::Most;
 use File::Temp;
-use File::Slurp;
+
+sub slurp
+{
+	my ($fname) = @_;
+	my $data;
+	local $/;
+	if (open(SLURP, "<$fname")) {
+		$data = <SLURP>;
+		close(SLURP);
+	}
+	return $data;
+}
 
 use Sendmail::Queue;
 
@@ -113,8 +124,8 @@ Test message
 Dave
 EOM
 
-	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
-	is( File::Slurp::slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
+	like( slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
+	is( slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
 
 	is( unlink(glob("$self->{tmpdir}/qf*")), 1, 'Unlinked one queue file');
 	is( unlink(glob("$self->{tmpdir}/df*")), 1, 'Unlinked one data file');
@@ -216,10 +227,10 @@ EOM
 
 	isnt( $qids->{stream_one}, $qids->{stream_two}, 'Got two different queue IDs');
 
-	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qids->{stream_one}" ), $qf_one_regex, 'Wrote expected qf data');
-	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qids->{stream_two}" ), $qf_two_regex, 'Wrote expected qf data');
-	is( File::Slurp::slurp( "$self->{tmpdir}/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
-	is( File::Slurp::slurp( "$self->{tmpdir}/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
+	like( slurp( "$self->{tmpdir}/qf$qids->{stream_one}" ), $qf_one_regex, 'Wrote expected qf data');
+	like( slurp( "$self->{tmpdir}/qf$qids->{stream_two}" ), $qf_two_regex, 'Wrote expected qf data');
+	is( slurp( "$self->{tmpdir}/df$qids->{stream_one}" ), $df_expected, 'Wrote expected df data');
+	is( slurp( "$self->{tmpdir}/df$qids->{stream_two}" ), $df_expected, 'Wrote expected df data for stream two');
 
 	is( (stat("$self->{tmpdir}/df$qids->{stream_one}"))[1],
 	    (stat("$self->{tmpdir}/df$qids->{stream_two}"))[1],
@@ -395,8 +406,8 @@ Test message with m\x{94}\x{94}se!
 Dave
 EOM
 
-	like( File::Slurp::slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
-	is( File::Slurp::slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
+	like( slurp( "$self->{tmpdir}/qf$qid" ), $qf_regex, 'Wrote expected qf data');
+	is( slurp( "$self->{tmpdir}/df$qid" ), $df_expected, 'Wrote expected df data');
 
 	is( unlink(glob("$self->{tmpdir}/qf*")), 1, 'Unlinked one queue file');
 	is( unlink(glob("$self->{tmpdir}/df*")), 1, 'Unlinked one data file');
