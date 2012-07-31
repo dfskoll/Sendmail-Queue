@@ -1,5 +1,17 @@
 Revision history for Sendmail-Queue
 
+0.700	Tue, 31 Jul 2012 14:19:39 -0400 (dfs)
+
+  * Fix tests so they don't depend on File::Slurp.
+
+  * Skip the Sendmail locking test if we can't seem to find a
+    genuine sendmail executable.
+
+0.600	Tue, 17 Jul 2012 08:55:55 -0400 (dfs)
+
+  * Lock files using both flock() and fcntl()-style locking
+    to make sure that Sendmail respects our locks.
+
 0.400	Tue, 20 Jul 2010 10:35:37 -0400	(dmo)
 
   * Allow arbitrary Sendmail macros to be set.
