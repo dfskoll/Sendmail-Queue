@@ -1,5 +1,10 @@
 Revision history for Sendmail-Queue
 
+0.800   Thu, 16 Aug 2012 13:24:00 -0400 (dfs)
+
+  * Absolutely no code changes; just fixes to tests so they do not depend
+    on the local time zone.
+
 0.700	Tue, 31 Jul 2012 14:19:39 -0400 (dfs)
 
   * Fix tests so they don't depend on File::Slurp.
