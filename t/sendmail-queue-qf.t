@@ -6,6 +6,8 @@ use base qw( Test::Class );
 
 use Test::Most;
 use File::Temp;
+# Set time zone to UTC for consistent test results
+$ENV{TZ} = 'UTC';
 
 sub slurp
 {
@@ -203,7 +205,7 @@ sub generate_received : Test(3)
 
 	# First, try it with no values set.
 	$qf->synthesize_received_header();
-	my $r_hdr = qr/^Received: \(from $USER\@localhost\)\n\tby localhost \(Sendmail::Queue\) id lAE0Qe..\d{6}; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	my $r_hdr = qr/^Received: \(from $USER\@localhost\)\n\tby localhost \(Sendmail::Queue\) id lAE0Qe..\d{6}; Wed, 14 Nov 2007 00:26:40 \+0000$/;
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 
 	# Wipe and try again
@@ -220,7 +222,7 @@ sub generate_received : Test(3)
 
 	$qf->synthesize_received_header();
 	$r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
-	by mail.roaringpenguin.com (envelope-sender <dmo\E\@dmo.ca>\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor <dmo\@roaringpenguin\.com>; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	by mail.roaringpenguin.com (envelope-sender <dmo\E\@dmo.ca>\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor <dmo\@roaringpenguin\.com>; Wed, 14 Nov 2007 00:26:40 \+0000$/;
 
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 }
@@ -246,7 +248,7 @@ sub clone_qf_file : Test(10)
 
 	$qf->synthesize_received_header();
 	my $r_hdr = qr/^Received: from loser \Q(broken.dynamic.server.example.com [999.888.777.666])
-	by mail.roaringpenguin.com (envelope-sender <dmo\E\@dmo.ca>\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor <dmo\@roaringpenguin\.com>; Tue, 13 Nov 2007 19:26:40 -0500$/;
+	by mail.roaringpenguin.com (envelope-sender <dmo\E\@dmo.ca>\Q) (Sendmail::Queue)\E with ESMTP id lAE0Qe..\d{6}\n\tfor <dmo\@roaringpenguin\.com>; Wed, 14 Nov 2007 00:26:40 \+0000$/;
 
 	like( $qf->get_received_header(), $r_hdr, 'Got expected Received header');
 

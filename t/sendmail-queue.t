@@ -6,6 +6,8 @@ use base qw( Test::Class );
 
 use Test::Most;
 use File::Temp;
+# Set time zone to UTC for consistent test results
+$ENV{TZ} = 'UTC';
 
 sub slurp
 {
@@ -79,7 +81,7 @@ sub queue_message : Test(4)
 	my $data = <<EOM;
 From: foobar
 To: someone
-Date: Wed, 07 Nov 2007 14:54:33 -0500
+Date: Wed, 07 Nov 2007 19:54:33 +0000
 
 Test message
 -- 
@@ -111,10 +113,10 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 23:31:30 \+0000
 H\?\?From: foobar
 H\?\?To: someone
-H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
+H\?\?Date: Wed, 07 Nov 2007 19:54:33 \+0000
 .
 $/;
 
@@ -143,7 +145,7 @@ sub queue_multiple_success : Test(11)
 	my $data = <<EOM;
 From: foobar
 To: someone
-Date: Wed, 07 Nov 2007 14:54:33 -0500
+Date: Wed, 07 Nov 2007 19:54:33 +0000
 
 Test message
 -- 
@@ -191,10 +193,10 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 23:31:30 \+0000
 H\?\?From: foobar
 H\?\?To: someone
-H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
+H\?\?Date: Wed, 07 Nov 2007 19:54:33 \+0000
 .
 $/;
 
@@ -212,10 +214,10 @@ RPFD:foo\@roaringpenguin.com
 rRFC822; bar\@roaringpenguin.com
 RPFD:bar\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 23:31:30 \+0000
 H\?\?From: foobar
 H\?\?To: someone
-H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
+H\?\?Date: Wed, 07 Nov 2007 19:54:33 \+0000
 .
 $/;
 
@@ -255,7 +257,7 @@ sub queue_message_failure : Test(4)
 	my $data = <<EOM;
 From: foobar
 To: someone
-Date: Wed, 07 Nov 2007 14:54:33 -0500
+Date: Wed, 07 Nov 2007 19:54:33 +0000
 
 Test message
 -- 
@@ -298,7 +300,7 @@ sub queue_multiple_failure : Test(6)
 	my $data = <<EOM;
 From: foobar
 To: someone
-Date: Wed, 07 Nov 2007 14:54:33 -0500
+Date: Wed, 07 Nov 2007 19:54:33 +0000
 
 Test message
 -- 
@@ -359,7 +361,7 @@ sub queue_message_8bit : Test(4)
 	my $data = <<"EOM";
 From: foobar
 To: someone
-Date: Wed, 07 Nov 2007 14:54:33 -0500
+Date: Wed, 07 Nov 2007 19:54:33 +0000
 
 Test message with m\x{94}\x{94}se!
 
@@ -392,10 +394,10 @@ RPFD:dmo\@roaringpenguin.com
 rRFC822; dfs\@roaringpenguin.com
 RPFD:dfs\@roaringpenguin.com
 H\?\?Received: \(from $USER\@localhost\)
-	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 18:31:30 -0500
+	by localhost \(envelope-sender <dmo\@dmo\.ca>\) \(Sendmail::Queue\) with ESMTP id n1DNVU..\d{6}; Fri, 13 Feb 2009 23:31:30 \+0000
 H\?\?From: foobar
 H\?\?To: someone
-H\?\?Date: Wed, 07 Nov 2007 14:54:33 -0500
+H\?\?Date: Wed, 07 Nov 2007 19:54:33 \+0000
 .
 $/;
 
