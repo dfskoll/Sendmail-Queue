@@ -4,7 +4,7 @@ use warnings;
 use Carp;
 use 5.8.0;
 
-our $VERSION = '0.800';
+our $VERSION = '0.801';
 
 use Sendmail::Queue::Qf;
 use Sendmail::Queue::Df;
@@ -260,7 +260,7 @@ sub queue_message
 {
 	my ($self, $args) = @_;
 
-	foreach my $argname qw( sender recipients data ) {
+	foreach my $argname (qw( sender recipients data )) {
 		die qq{$argname argument must be specified} unless exists $args->{$argname}
 
 	}
@@ -380,7 +380,7 @@ sub queue_multiple
 {
 	my ($self, $args) = @_;
 
-	foreach my $argname qw( envelopes data ) {
+	foreach my $argname (qw( envelopes data )) {
 		die qq{$argname argument must be specified} unless exists $args->{$argname}
 	}
 
@@ -403,7 +403,7 @@ sub queue_multiple
 	}
 
 	# Allow passing of optional info down to Qf object
-	foreach my $optarg qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp macros ) {
+	foreach my $optarg (qw( product_name helo relay_address relay_hostname local_hostname protocol timestamp macros )) {
 		if( exists $args->{$optarg} ) {
 			my $method = 'set_' . $optarg;
 			$qf->$method($args->{$optarg} );
