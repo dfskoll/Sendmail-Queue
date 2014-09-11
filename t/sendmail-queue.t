@@ -279,7 +279,7 @@ EOM
 
 	chmod 0755, $self->{tmpdir};
 
-	like( $@, qr{Error creating qf file /tmp/[^/]+/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
+	like( $@, qr{Error creating qf file .*/qfn1DNVU..\d{6}: Permission denied}, 'Got expected error');
 
 	my @qf = glob("$self->{tmpdir}/qf*");
 	my @df = glob("$self->{tmpdir}/df*");
